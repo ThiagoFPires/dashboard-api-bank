@@ -3,17 +3,34 @@ from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+from datetime import datetime, timezone, timedelta
+
 # No ambiente Serverless da Vercel, apenas /tmp é gravável
 if os.getenv("VERCEL"):
     DB_PATH = Path("/tmp/monitor_data.sqlite3")
 else:
     DB_PATH = BASE_DIR / "monitor_data.sqlite3"
 
+# Configuração Oficial do Fuso Horário de Brasília (UTC-3)
+try:
+    from zoneinfo import ZoneInfo
+    BRASILIA_TZ = ZoneInfo("America/Sao_Paulo")
+except Exception:
+    BRASILIA_TZ = timezone(timedelta(hours=-3))
+
+def get_brasilia_now() -> datetime:
+    """Retorna datetime atual com o fuso horário oficial de Brasília (America/Sao_Paulo / UTC-3)."""
+    try:
+        return datetime.now(BRASILIA_TZ)
+    except Exception:
+        return datetime.now(timezone(timedelta(hours=-3)))
+
 class Settings:
     PROJECT_NAME: str = "Monitor de APIs Bancárias"
     VERSION: str = "1.0.0"
     HOST: str = os.getenv("HOST", "0.0.0.0")
     PORT: int = int(os.getenv("PORT", 8000))
+    TIMEZONE: str = "America/Sao_Paulo"
     
     # Intervalo de checagem automática em segundos
     CHECK_INTERVAL_SECONDS: int = 30
@@ -29,3 +46,4 @@ class Settings:
     MONITOR_MODE: str = os.getenv("MONITOR_MODE", "hybrid")
 
 settings = Settings()
+

@@ -12,7 +12,7 @@ import json
 import random
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
-from app.config import DB_PATH
+from app.config import DB_PATH, get_brasilia_now
 from app.banks_catalog import BANKS_CATALOG
 
 def get_db_connection() -> sqlite3.Connection:
@@ -84,7 +84,7 @@ def init_db():
 def seed_initial_history(conn: sqlite3.Connection):
     """Alimenta o histórico com dados realistas incluindo verde (bom estado), amarelo (oscilação) e vermelho (queda)."""
     cursor = conn.cursor()
-    now = datetime.now()
+    now = get_brasilia_now()
     
     bank_latency_profile = {
         "itau": (80, 210),
@@ -152,7 +152,7 @@ def record_check(bank_id: str, service_id: str, status_code: Optional[int],
                  is_simulated: bool = False):
     conn = get_db_connection()
     cursor = conn.cursor()
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now_str = get_brasilia_now().strftime("%Y-%m-%d %H:%M:%S")
     
     cursor.execute("""
         INSERT INTO service_checks 
@@ -217,7 +217,7 @@ def get_latest_bank_status() -> List[Dict[str, Any]]:
                 svc_status = "operational"
                 svc_lat = 120.0
                 svc_code = 200
-                last_update = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                last_update = get_brasilia_now().strftime("%Y-%m-%d %H:%M:%S")
                 err = None
                 
             services_status.append({
@@ -244,13 +244,14 @@ def get_latest_bank_status() -> List[Dict[str, Any]]:
             
         avg_latency = round(sum(latencies) / len(latencies), 1) if latencies else 0.0
         
+        cutoff_24h = (get_brasilia_now() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
         cursor.execute("""
             SELECT 
                 COUNT(*) as total,
                 SUM(CASE WHEN status != 'outage' THEN 1 ELSE 0 END) as successful
             FROM service_checks 
-            WHERE bank_id = ? AND timestamp >= datetime('now', '-24 hours')
-        """, (b_id,))
+            WHERE bank_id = ? AND timestamp >= ?
+        """, (b_id, cutoff_24h))
         stats = cursor.fetchone()
         
         total = stats["total"] if stats and stats["total"] else 1
@@ -372,7 +373,7 @@ def get_system_summary() -> Dict[str, Any]:
         "overall_uptime": overall_uptime,
         "active_incidents": active_incidents,
         "total_checks": total_checks,
-        "last_checked_at": datetime.now().strftime("%H:%M:%S")
+        "last_checked_at": get_brasilia_now().strftime("%H:%M:%S")
     }
 
 def get_latency_chart_data(limit_per_bank: int = 20) -> Dict[str, Any]:
@@ -382,25 +383,24 @@ def get_latency_chart_data(limit_per_bank: int = 20) -> Dict[str, Any]:
     datasets = []
     
     cursor.execute("""
-        SELECT DISTINCT strftime('%H:%M', timestamp) as time_label, timestamp
+        SELECT DISTINCT strftime('%H:%M', timestamp) as time_label
         FROM service_checks
-        ORDER BY id DESC
+        ORDER BY timestamp DESC
         LIMIT ?
     """, (limit_per_bank,))
     time_rows = list(reversed(cursor.fetchall()))
     labels = [r["time_label"] for r in time_rows]
-    timestamps = [r["timestamp"] for r in time_rows]
     
     for bank in BANKS_CATALOG:
         b_id = bank["id"]
         points = []
         
-        for ts in timestamps:
+        for t_label in labels:
             cursor.execute("""
                 SELECT AVG(latency_ms) as avg_lat
                 FROM service_checks
-                WHERE bank_id = ? AND timestamp = ?
-            """, (b_id, ts))
+                WHERE bank_id = ? AND strftime('%H:%M', timestamp) = ?
+            """, (b_id, t_label))
             row = cursor.fetchone()
             if row and row["avg_lat"] is not None:
                 points.append(round(row["avg_lat"], 1))
@@ -445,7 +445,7 @@ def get_incidents(status_filter: Optional[str] = None, limit: int = 50) -> List[
 def resolve_incident(incident_id: int):
     conn = get_db_connection()
     cursor = conn.cursor()
-    now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    now_str = get_brasilia_now().strftime("%Y-%m-%d %H:%M:%S")
     cursor.execute("""
         UPDATE incidents 
         SET status = 'resolved', resolved_at = ?

@@ -14,6 +14,16 @@ if sys.platform == "win32":
     except Exception:
         pass
 
+# Configurar fuso horário padrão para Horário de Brasília
+os.environ.setdefault("TZ", "America/Sao_Paulo")
+try:
+    import time
+    if hasattr(time, "tzset"):
+        time.tzset()
+except Exception:
+    pass
+
+
 # Garantir que a raiz do projeto esteja no sys.path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 if BASE_DIR not in sys.path:

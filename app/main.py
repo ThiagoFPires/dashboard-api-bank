@@ -15,7 +15,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from app.config import settings
+from app.config import settings, get_brasilia_now
 from app.banks_catalog import BANKS_CATALOG, get_bank_by_id
 from app.database import (
     init_db, get_latest_bank_status, get_system_summary,
@@ -174,7 +174,7 @@ async def api_check_now(payload: PingRequest = None):
         results = await monitor_engine.check_all_banks()
         
     return {
-        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "timestamp": get_brasilia_now().strftime("%Y-%m-%d %H:%M:%S"),
         "checked_count": len(results),
         "results": results
     }

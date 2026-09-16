@@ -11,3 +11,6 @@ services:
         value: 3.11.8
       - key: MONITOR_MODE
         value: hybrid
+      - key: TZ
+        value: America/Sao_Paulo
+
