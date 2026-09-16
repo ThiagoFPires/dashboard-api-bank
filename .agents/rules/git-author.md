@@ -4,6 +4,6 @@
    - **Nome:** `ThiagoFPires`
    - **Email:** `contato.thiagofreitasp@gmail.com`
 
-2. **Commit Automático:**
-   - Sempre realizar o commit das alterações no repositório assim que uma tarefa for finalizada.
+2. **Commit e Push Automáticos:**
+   - Sempre realizar o commit e o `git push` no repositório remoto assim que uma tarefa for finalizada.
 
