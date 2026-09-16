@@ -151,19 +151,17 @@
                             </div>
                         </div>
 
-                        <!-- BARRA DE CALOR (HEAT BAR) - Verde / Amarelo / Vermelho Sólidos -->
+                        <!-- INDICADOR DE STATUS - Barrinha Única -->
                         <div class="mt-3 pt-3 border-t border-zinc-800">
                             <div class="flex items-center justify-between text-[10px] text-zinc-400 mb-1.5 font-mono">
-                                <span class="flex items-center gap-1">
-                                    <span>Indicador de Calor</span>
+                                <span>Status da Conexão</span>
+                                <span id="heat-status-text-{{ bank.bank_id }}" class="font-semibold {% if bank.status == 'operational' %}text-emerald-400{% elif bank.status == 'degraded' %}text-yellow-400{% else %}text-red-400{% endif %}">
+                                    {% if bank.status == 'operational' %}Bom Estado{% elif bank.status == 'degraded' %}Oscilando{% else %}Caiu (Fora){% endif %}
                                 </span>
-                                <span>Recente</span>
                             </div>
                             
-                            <div class="heat-bar-container" id="heat-bar-{{ bank.bank_id }}">
-                                {% for b in bank.blocks %}
-                                    <div class="heat-block {{ b.css_class }}" title="{{ b.time }} • {{ b.label }} ({{ b.latency_ms }}ms)"></div>
-                                {% endfor %}
+                            <div class="w-full h-2.5 rounded-full bg-zinc-950 border border-zinc-800 p-[1px] overflow-hidden">
+                                <div id="heat-bar-{{ bank.bank_id }}" class="w-full h-full rounded-full transition-all duration-300 {% if bank.status == 'operational' %}bg-[#22c55e]{% elif bank.status == 'degraded' %}bg-[#eab308]{% else %}bg-[#ef4444]{% endif %}" title="{% if bank.status == 'operational' %}Bom Estado (Verde){% elif bank.status == 'degraded' %}Oscilando (Amarelo){% else %}Caiu (Vermelho){% endif %}"></div>
                             </div>
                         </div>
 
@@ -368,6 +366,25 @@ function filterTable(bankId) {
 async function simulateBankState(bankId, state) {
     let stateLabel = state === 'outage' ? 'Caiu (Vermelho)' : (state === 'degraded' ? 'Oscilando (Amarelo)' : 'Bom Estado (Verde)');
     showToast(`Alterando ${bankId.toUpperCase()} para: ${stateLabel}...`, "info");
+    
+    // Atualização otimista imediata na barrinha única
+    const heatBar = document.getElementById(`heat-bar-${bankId}`);
+    const heatText = document.getElementById(`heat-status-text-${bankId}`);
+    const stripe = document.getElementById(`stripe-${bankId}`);
+    
+    const colorClass = state === 'outage' ? 'bg-[#ef4444]' : (state === 'degraded' ? 'bg-[#eab308]' : 'bg-[#22c55e]');
+    const textClass = state === 'outage' ? 'text-red-400' : (state === 'degraded' ? 'text-yellow-400' : 'text-emerald-400');
+    const text = state === 'outage' ? 'Caiu (Fora)' : (state === 'degraded' ? 'Oscilando' : 'Bom Estado');
+    
+    if (heatBar) {
+        heatBar.className = `w-full h-full rounded-full transition-all duration-300 ${colorClass}`;
+        heatBar.title = stateLabel;
+    }
+    if (heatText) {
+        heatText.className = `font-semibold ${textClass}`;
+        heatText.innerText = text;
+    }
+    if (stripe) stripe.className = `h-1 w-full ${colorClass}`;
     
     try {
         const res = await fetch(`/api/banks/${bankId}/simulate`, {

@@ -249,16 +249,21 @@ function updateBanksUI(banks) {
             cardBadge.innerHTML = badgeHtml;
         }
 
-        // Atualizar Barra de Calor com os blocos verde, amarelo e vermelho
-        if (heatBar && bank.blocks) {
-            heatBar.innerHTML = bank.blocks.map(b => {
-                let css = b.css_class || (b.status === 'operational' ? 'heat-green' : (b.status === 'degraded' ? 'heat-yellow' : 'heat-red'));
-                let label = b.label || (b.status === 'operational' ? 'Bom Estado' : (b.status === 'degraded' ? 'Oscilando' : 'Caiu'));
-                let lat = b.latency_ms || 100;
-                let t = b.time || '--:--';
-                return `<div class="heat-block ${css}" title="${t} • ${label} (${lat}ms)"></div>`;
-            }).join("");
+        // Atualizar Barrinha Única de Status
+        const heatStatusText = document.getElementById(`heat-status-text-${bank.bank_id}`);
+        if (heatBar) {
+            let bgClass = bank.status === 'operational' ? 'bg-[#22c55e]' : (bank.status === 'degraded' ? 'bg-[#eab308]' : 'bg-[#ef4444]');
+            let label = bank.status === 'operational' ? 'Bom Estado (Verde)' : (bank.status === 'degraded' ? 'Oscilando (Amarelo)' : 'Caiu (Vermelho)');
+            heatBar.className = `w-full h-full rounded-full transition-all duration-300 ${bgClass}`;
+            heatBar.title = label;
         }
+        if (heatStatusText) {
+            let textClass = bank.status === 'operational' ? 'text-emerald-400' : (bank.status === 'degraded' ? 'text-yellow-400' : 'text-red-400');
+            let text = bank.status === 'operational' ? 'Bom Estado' : (bank.status === 'degraded' ? 'Oscilando' : 'Caiu (Fora)');
+            heatStatusText.className = `font-semibold ${textClass}`;
+            heatStatusText.innerText = text;
+        }
+
 
         // Atualizar mini-linhas de serviços dentro do card
         bank.services.forEach(svc => {
