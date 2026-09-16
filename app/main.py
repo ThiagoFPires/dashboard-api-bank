@@ -3,6 +3,7 @@ Aplicação Principal FastAPI para o Monitor de APIs Bancárias.
 Rotas de UI (Jinja2) e endpoints de API RESTful assíncrona.
 """
 
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from datetime import datetime
@@ -31,12 +32,14 @@ BASE_DIR = Path(__file__).resolve().parent
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: inicializar DB e disparar monitor em background
+    # Startup: inicializar DB
     init_db()
-    monitor_engine.start_background_worker()
+    if not os.getenv("VERCEL"):
+        monitor_engine.start_background_worker()
     yield
     # Shutdown: parar worker
-    monitor_engine.stop_background_worker()
+    if not os.getenv("VERCEL"):
+        monitor_engine.stop_background_worker()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,

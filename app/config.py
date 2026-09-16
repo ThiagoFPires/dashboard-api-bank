@@ -2,7 +2,12 @@ import os
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-DB_PATH = BASE_DIR / "monitor_data.sqlite3"
+
+# No ambiente Serverless da Vercel, apenas /tmp é gravável
+if os.getenv("VERCEL"):
+    DB_PATH = Path("/tmp/monitor_data.sqlite3")
+else:
+    DB_PATH = BASE_DIR / "monitor_data.sqlite3"
 
 class Settings:
     PROJECT_NAME: str = "Monitor de APIs Bancárias"
