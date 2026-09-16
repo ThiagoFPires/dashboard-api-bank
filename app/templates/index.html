@@ -134,7 +134,7 @@
                     <div>
                         <div class="flex items-start justify-between gap-2 mb-2">
                             <div class="flex items-center gap-2.5">
-                                <img src="{{ bank.logo_url }}" alt="{{ bank.name }}" class="w-8 h-8 rounded-lg object-contain border border-zinc-800 p-0.5 bg-black shrink-0" />
+                                <img src="{{ bank.logo_url }}" alt="{{ bank.name }}" class="w-8 h-8 rounded-lg object-contain shrink-0 shadow-sm" />
                                 <div>
                                     <a href="/banks/{{ bank.bank_id }}" class="text-sm font-bold text-white hover:text-zinc-300 transition-colors">
                                         {{ bank.short_name }}
@@ -307,7 +307,7 @@
                         <tr class="hover:bg-zinc-800/50 transition-colors service-row" data-bank="{{ bank.bank_id }}">
                             <td class="py-3 px-4 font-semibold text-white whitespace-nowrap">
                                 <div class="flex items-center gap-2.5">
-                                    <img src="{{ bank.logo_url }}" alt="{{ bank.short_name }}" class="w-5 h-5 rounded object-contain border border-zinc-800 bg-black p-0.5 shrink-0" />
+                                    <img src="{{ bank.logo_url }}" alt="{{ bank.short_name }}" class="w-5 h-5 rounded object-contain shrink-0 shadow-sm" />
                                     <span>{{ bank.short_name }}</span>
                                 </div>
                             </td>
