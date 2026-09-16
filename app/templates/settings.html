@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Configurações - Monitor de APIs Bancárias{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-6">
+
+    <!-- Header - Solid Dark -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-5">
+        <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+            <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+            <span>Configurações & Parâmetros de Monitoramento</span>
+        </h1>
+        <p class="text-xs text-zinc-400 mt-1">Ajuste intervalos de sonda, limiares de alerta e modos de telemetria.</p>
+    </div>
+
+    <!-- Form Container - Solid Dark Gray -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-6 space-y-6">
+        
+        <form id="settingsForm" onsubmit="saveSettings(event)" class="space-y-6">
+            
+            <!-- Modo de Operação -->
+            <div>
+                <label class="block text-xs font-bold text-white uppercase tracking-wider mb-2">Modo de Operação</label>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    
+                    <label class="cursor-pointer border rounded-lg p-4 flex flex-col justify-between transition-all {% if current_mode == 'hybrid' %}bg-zinc-800 border-white{% else %}bg-zinc-950 border-zinc-800 hover:border-zinc-700{% endif %}">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs font-bold text-white uppercase tracking-wider">Híbrido (Padrão)</span>
+                                <input type="radio" name="monitor_mode" value="hybrid" {% if current_mode == 'hybrid' %}checked{% endif %} class="accent-white">
+                            </div>
+                            <p class="text-xs text-zinc-400 leading-relaxed mt-1">Efetua sondas HTTP reais. Em caso de restrição mTLS privada sem certificado, aciona contingência para manter as métricas.</p>
+                        </div>
+                    </label>
+
+                    <label class="cursor-pointer border rounded-lg p-4 flex flex-col justify-between transition-all {% if current_mode == 'simulation_only' %}bg-zinc-800 border-white{% else %}bg-zinc-950 border-zinc-800 hover:border-zinc-700{% endif %}">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs font-bold text-white uppercase tracking-wider">Simulação Local</span>
+                                <input type="radio" name="monitor_mode" value="simulation_only" {% if current_mode == 'simulation_only' %}checked{% endif %} class="accent-white">
+                            </div>
+                            <p class="text-xs text-zinc-400 leading-relaxed mt-1">Gera telemetria contínua com perfis estocásticos para os 5 bancos sem tráfego de rede externo.</p>
+                        </div>
+                    </label>
+
+                    <label class="cursor-pointer border rounded-lg p-4 flex flex-col justify-between transition-all {% if current_mode == 'live_only' %}bg-zinc-800 border-white{% else %}bg-zinc-950 border-zinc-800 hover:border-zinc-700{% endif %}">
+                        <div>
+                            <div class="flex items-center justify-between mb-1">
+                                <span class="text-xs font-bold text-white uppercase tracking-wider">Apenas HTTP Real</span>
+                                <input type="radio" name="monitor_mode" value="live_only" {% if current_mode == 'live_only' %}checked{% endif %} class="accent-white">
+                            </div>
+                            <p class="text-xs text-zinc-400 leading-relaxed mt-1">Testa estritamente conexões de rede contra os endpoints cadastrados.</p>
+                        </div>
+                    </label>
+
+                </div>
+            </div>
+
+            <!-- Intervalo e Limiares -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 pt-4 border-t border-zinc-800">
+                
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-300 mb-1">Intervalo de Sonda (segundos)</label>
+                    <input type="number" id="checkInterval" min="5" max="300" value="{{ check_interval }}" class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 font-mono">
+                    <span class="text-[11px] text-zinc-500 mt-1 block">Padrão: 30 segundos</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-300 mb-1">Limite Normal (ms)</label>
+                    <input type="number" id="latencyNormal" min="100" max="2000" value="{{ latency_normal }}" class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 font-mono">
+                    <span class="text-[11px] text-zinc-500 mt-1 block">Abaixo disto: Operacional</span>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-zinc-300 mb-1">Limite Degradação (ms)</label>
+                    <input type="number" id="latencyDegraded" min="500" max="5000" value="{{ latency_degraded }}" class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 font-mono">
+                    <span class="text-[11px] text-zinc-500 mt-1 block">Acima disto: Degradação</span>
+                </div>
+
+            </div>
+
+            <!-- Webhook Alertas -->
+            <div class="pt-4 border-t border-zinc-800">
+                <label class="block text-xs font-semibold text-zinc-300 mb-1">URL de Webhook para Notificações</label>
+                <input type="url" id="webhookUrl" placeholder="https://..." value="{{ webhook_url }}" class="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-xs text-white focus:outline-none focus:border-zinc-500 font-mono">
+                <span class="text-[11px] text-zinc-500 mt-1 block">Dispara payload JSON em caso de incidente ou recuperação.</span>
+            </div>
+
+            <div class="pt-4 flex items-center justify-end gap-3 border-t border-zinc-800">
+                <button type="button" onclick="window.location.reload()" class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-xs font-medium transition-colors">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-5 py-2 bg-white hover:bg-zinc-200 text-black rounded text-xs font-bold transition-all">
+                    Salvar Alterações
+                </button>
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+<script>
+async function saveSettings(e) {
+    e.preventDefault();
+    const mode = document.querySelector('input[name="monitor_mode"]:checked').value;
+    const interval = parseInt(document.getElementById("checkInterval").value);
+    const normal = parseInt(document.getElementById("latencyNormal").value);
+    const degraded = parseInt(document.getElementById("latencyDegraded").value);
+    const webhook = document.getElementById("webhookUrl").value;
+
+    try {
+        const res = await fetch("/api/settings", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                monitor_mode: mode,
+                check_interval: interval,
+                latency_normal_threshold: normal,
+                latency_degraded_threshold: degraded,
+                webhook_url: webhook
+            })
+        });
+
+        if (res.ok) {
+            showToast("Configurações atualizadas com sucesso!", "success");
+            setTimeout(() => window.location.reload(), 800);
+        } else {
+            showToast("Erro ao salvar configurações.", "error");
+        }
+    } catch (err) {
+        showToast("Falha na comunicação com o servidor.", "error");
+    }
+}
+</script>
+{% endblock %}

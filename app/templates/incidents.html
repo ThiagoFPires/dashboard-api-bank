@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block title %}Central de Incidentes - Monitor de APIs Bancárias{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- Header Banner - Solid Dark Gray -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-lg p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-lg font-bold text-white tracking-tight flex items-center gap-2">
+                <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                <span>Central de Incidentes e Histórico de Eventos</span>
+            </h1>
+            <p class="text-xs text-zinc-400 mt-1">Registro de anomalias, picos de latência e manutenções nos serviços bancários.</p>
+        </div>
+
+        <div class="flex items-center gap-2 font-mono text-xs text-zinc-400">
+            <span>Total: <strong class="text-white">{{ incidents | length }}</strong></span>
+        </div>
+    </div>
+
+    <!-- Incidents Table / List - Solid Monochrome -->
+    <div class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
+        {% if incidents %}
+        <div class="divide-y divide-zinc-800">
+            {% for inc in incidents %}
+            <div class="p-5 hover:bg-zinc-800/40 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div class="space-y-1.5 flex-1">
+                    <div class="flex items-center gap-2 flex-wrap font-mono">
+                        {% if inc.status == 'active' %}
+                        <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-white text-black flex items-center gap-1.5">
+                            <span class="w-1.5 h-1.5 rounded-full bg-black"></span> ATIVO
+                        </span>
+                        {% else %}
+                        <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700">
+                            RESOLVIDO
+                        </span>
+                        {% endif %}
+
+                        <span class="px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-zinc-950 text-zinc-300 border border-zinc-800">
+                            {{ inc.bank_id }}
+                        </span>
+
+                        <span class="text-[11px] text-zinc-400">
+                            • Severidade: {{ inc.severity | upper }}
+                        </span>
+                    </div>
+
+                    <h3 class="text-sm font-bold text-white">{{ inc.title }}</h3>
+                    <p class="text-xs text-zinc-400 leading-relaxed max-w-3xl">{{ inc.description }}</p>
+
+                    <div class="flex items-center gap-4 text-xs text-zinc-500 pt-1 font-mono">
+                        <span>Início: {{ inc.started_at }}</span>
+                        {% if inc.resolved_at %}
+                        <span>• Conclusão: {{ inc.resolved_at }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                {% if inc.status == 'active' %}
+                <div>
+                    <button onclick="resolveIncidentAction('{{ inc.id }}')" class="px-3 py-1.5 bg-white hover:bg-zinc-200 text-black rounded text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap">
+                        <svg class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                        <span>Marcar Resolvido</span>
+                    </button>
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="p-12 text-center">
+            <svg class="w-10 h-10 text-zinc-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <h3 class="text-sm font-bold text-white">Nenhum incidente registrado</h3>
+            <p class="text-xs text-zinc-500 mt-1">Todos os serviços bancários estão operando com estabilidade e conformidade.</p>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<script>
+async function resolveIncidentAction(incidentId) {
+    if (!confirm("Deseja marcar este incidente como resolvido?")) return;
+    try {
+        const res = await fetch(`/api/incidents/${incidentId}/resolve`, { method: "POST" });
+        if (res.ok) {
+            showToast("Incidente marcado como resolvido!", "success");
+            setTimeout(() => window.location.reload(), 800);
+        }
+    } catch (e) {
+        showToast("Erro ao resolver incidente.", "error");
+    }
+}
+</script>
+{% endblock %}
