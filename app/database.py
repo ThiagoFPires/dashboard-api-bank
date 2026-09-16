@@ -258,22 +258,38 @@ def get_latest_bank_status() -> List[Dict[str, Any]]:
         successful = stats["successful"] if stats and stats["successful"] else 1
         uptime_pct = round((successful / total) * 100, 2) if total > 0 else 100.0
         
-        # Histórico recente para o INDICADOR DE CALOR (últimas 30 sondas do banco)
+        # Histórico recente para o INDICADOR DE CALOR (1 bloco = 1 minuto exato no tempo)
+        num_minutes = 24
+        now_dt = get_brasilia_now()
+        cutoff_minutes = (now_dt - timedelta(minutes=num_minutes)).strftime("%Y-%m-%d %H:%M:%S")
+        
         cursor.execute("""
             SELECT 
-                status, 
-                latency_ms, 
-                strftime('%H:%M', timestamp) as time_label,
-                timestamp
-            FROM service_checks 
-            WHERE bank_id = ?
-            ORDER BY id DESC LIMIT 28
-        """, (b_id,))
-        block_rows = cursor.fetchall()
+                strftime('%Y-%m-%d %H:%M', timestamp) as minute_key,
+                CASE 
+                    WHEN SUM(CASE WHEN status = 'outage' THEN 1 ELSE 0 END) > 0 THEN 'outage'
+                    WHEN SUM(CASE WHEN status = 'degraded' THEN 1 ELSE 0 END) > 0 THEN 'degraded'
+                    ELSE 'operational'
+                END as minute_status,
+                ROUND(AVG(latency_ms), 1) as avg_lat
+            FROM service_checks
+            WHERE bank_id = ? AND timestamp >= ?
+            GROUP BY minute_key
+        """, (b_id, cutoff_minutes))
+        
+        minute_map = {row["minute_key"]: (row["minute_status"], row["avg_lat"]) for row in cursor.fetchall()}
         
         heat_blocks = []
-        for r in reversed(block_rows):
-            st = r["status"]
+        for i in range(num_minutes - 1, -1, -1):
+            m_dt = now_dt - timedelta(minutes=i)
+            m_key = m_dt.strftime("%Y-%m-%d %H:%M")
+            m_time = m_dt.strftime("%H:%M")
+            
+            if m_key in minute_map:
+                st, lat = minute_map[m_key]
+            else:
+                st, lat = "operational", 120.0
+                
             if st == "operational":
                 color = "#22c55e" # Verde: Bom estado
                 label = "Bom Estado"
@@ -289,23 +305,13 @@ def get_latest_bank_status() -> List[Dict[str, Any]]:
                 
             heat_blocks.append({
                 "status": st,
-                "latency_ms": r["latency_ms"],
-                "time": r["time_label"],
+                "latency_ms": lat,
+                "time": m_time,
                 "color": color,
                 "label": label,
                 "css_class": css_class
             })
-            
-        # Se não houver 28 blocos, preencher com verde padrão
-        while len(heat_blocks) < 28:
-            heat_blocks.insert(0, {
-                "status": "operational",
-                "latency_ms": 120.0,
-                "time": "--:--",
-                "color": "#22c55e",
-                "label": "Bom Estado",
-                "css_class": "heat-green"
-            })
+
             
         results.append({
             "bank_id": b_id,
