@@ -26,6 +26,8 @@ const OFFICIAL_BANK_COLORS = {
     "bradesco": "#CC092F"   // Vermelho Bradesco
 };
 
+let currentChartFilter = "all";
+
 // Inicialização do Gráfico Chart.js
 function initChart() {
     const ctx = document.getElementById("latencyChart");
@@ -49,14 +51,7 @@ function initChart() {
             },
             plugins: {
                 legend: {
-                    position: "top",
-                    labels: {
-                        color: "#ffffff",
-                        usePointStyle: true,
-                        boxWidth: 10,
-                        padding: 16,
-                        font: { size: 12, family: "Inter, sans-serif", weight: "600" }
-                    }
+                    display: false // Usamos os botões interativos customizados acima do gráfico
                 },
                 tooltip: {
                     backgroundColor: "#09090b",
@@ -106,6 +101,7 @@ async function loadChartData() {
         latencyChart.data.datasets = data.datasets.map(ds => {
             const color = OFFICIAL_BANK_COLORS[ds.bank_id] || ds.color || "#ffffff";
             return {
+                bank_id: ds.bank_id,
                 label: ds.label,
                 data: ds.data,
                 borderColor: color,
@@ -115,13 +111,59 @@ async function loadChartData() {
                 pointHoverRadius: 6,
                 pointBackgroundColor: color,
                 tension: 0.3,
-                fill: false
+                fill: false,
+                hidden: (currentChartFilter !== "all" && ds.bank_id !== currentChartFilter)
             };
         });
         latencyChart.update();
     } catch (err) {
         console.error("Erro ao carregar dados do gráfico:", err);
     }
+}
+
+// Filtro de Bancos no Gráfico de Histórico Comparativo
+function filterChart(bankId) {
+    if (currentChartFilter === bankId && bankId !== "all") {
+        currentChartFilter = "all";
+    } else {
+        currentChartFilter = bankId;
+    }
+    applyChartFilter();
+}
+
+function applyChartFilter() {
+    const buttons = document.querySelectorAll(".chart-filter-btn");
+    buttons.forEach(btn => {
+        const filter = btn.getAttribute("data-filter");
+        const bankColor = btn.getAttribute("data-color");
+        if (filter === currentChartFilter) {
+            if (filter === "all") {
+                btn.className = "chart-filter-btn px-3 py-1.5 rounded font-semibold bg-white text-black border border-white transition-all flex items-center gap-1.5 shadow-sm";
+                btn.style.borderColor = "";
+                btn.style.boxShadow = "";
+            } else {
+                btn.className = "chart-filter-btn px-2.5 py-1.5 rounded font-semibold bg-zinc-800 text-white transition-all flex items-center gap-1.5 shadow-sm";
+                btn.style.borderColor = bankColor || "#ffffff";
+                btn.style.boxShadow = `0 0 12px ${bankColor}40`;
+            }
+        } else {
+            btn.className = "chart-filter-btn px-2.5 py-1.5 rounded font-semibold bg-zinc-950 text-zinc-400 border border-zinc-800 hover:text-white hover:bg-zinc-900 transition-all flex items-center gap-1.5";
+            btn.style.borderColor = "";
+            btn.style.boxShadow = "";
+        }
+    });
+
+    if (!latencyChart) return;
+
+    latencyChart.data.datasets.forEach(ds => {
+        if (currentChartFilter === "all") {
+            ds.hidden = false;
+        } else {
+            ds.hidden = (ds.bank_id !== currentChartFilter);
+        }
+    });
+
+    latencyChart.update();
 }
 
 // Carregar Dados Consolidados do Dashboard

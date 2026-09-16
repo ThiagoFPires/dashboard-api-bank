@@ -1,5 +1,9 @@
-# Git Commit Author Rule
+# Git Workflow & Commit Rules
 
-Sempre realizar commits no repositório utilizando o seguinte autor:
-- **Nome:** `ThiagoFPires`
-- **Email:** `contato.thiagofreitasp@gmail.com`
+1. **Autor dos Commits:**
+   - **Nome:** `ThiagoFPires`
+   - **Email:** `contato.thiagofreitasp@gmail.com`
+
+2. **Commit Automático:**
+   - Sempre realizar o commit das alterações no repositório assim que uma tarefa for finalizada.
+
