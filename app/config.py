@@ -12,8 +12,8 @@ else:
 class Settings:
     PROJECT_NAME: str = "Monitor de APIs Bancárias"
     VERSION: str = "1.0.0"
-    HOST: str = "0.0.0.0"
-    PORT: int = 8000
+    HOST: str = os.getenv("HOST", "0.0.0.0")
+    PORT: int = int(os.getenv("PORT", 8000))
     
     # Intervalo de checagem automática em segundos
     CHECK_INTERVAL_SECONDS: int = 30

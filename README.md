@@ -55,6 +55,26 @@ Abra seu navegador em:
 
 ---
 
+## 🌐 Hospedagem na Nuvem (Deploy Gratuito)
+
+### Opção 1: Render (Recomendado para Monitor 24/7)
+O Render mantém o worker assíncrono em execução contínua 24/7, monitorando as APIs mesmo quando você não está com a página aberta:
+1. Acesse [render.com](https://render.com) e conecte com o GitHub.
+2. Clique em **"New +"** -> **"Web Service"**.
+3. Selecione o repositório `ThiagoFPires/dashboard-api-bank`.
+4. Preencha as configurações (se não forem preenchidas automaticamente pelo `render.yaml`):
+   - **Environment:** `Python 3`
+   - **Build Command:** `pip install -r requirements.txt`
+   - **Start Command:** `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+5. Clique em **"Deploy Web Service"**!
+
+### Opção 2: Vercel (Serverless)
+1. Acesse [vercel.com](https://vercel.com) e importe o repositório `ThiagoFPires/dashboard-api-bank`.
+2. O arquivo `vercel.json` e `api/index.py` já estão configurados automaticamente.
+3. Clique em **"Deploy"**!
+
+---
+
 ## ⚙️ Modos de Operação
 
 Na aba **Configurações** (`/settings`), você pode ajustar:

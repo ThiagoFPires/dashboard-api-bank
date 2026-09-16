@@ -1,6 +1,6 @@
 """
 Script de inicialização do Monitor de APIs Bancárias.
-Executa o servidor local Uvicorn na porta 8000.
+Executa o servidor Uvicorn compatível com ambiente local e nuvem (Render, Railway, etc.).
 """
 
 import sys
@@ -20,6 +20,9 @@ if BASE_DIR not in sys.path:
     sys.path.insert(0, BASE_DIR)
 
 def main():
+    host = os.getenv("HOST", "0.0.0.0")
+    port = int(os.getenv("PORT", 8000))
+
     print("\n" + "=" * 65)
     print("  [+] MONITOR DE APIS BANCARIAS - BRASIL")
     print("  Bancos Monitorados:")
@@ -29,14 +32,14 @@ def main():
     print("    - Banco do Brasil (001)")
     print("    - Bradesco (237)")
     print("=" * 65)
-    print("  * Dashboard Web: http://127.0.0.1:8000")
-    print("  * Swagger API Docs: http://127.0.0.1:8000/docs")
+    print(f"  * Servidor Ativo em: http://{host}:{port}")
+    print(f"  * Swagger API Docs: http://{host}:{port}/docs")
     print("=" * 65 + "\n")
     
     uvicorn.run(
         "app.main:app",
-        host="127.0.0.1",
-        port=8000,
+        host=host,
+        port=port,
         reload=False,
         log_level="info"
     )
