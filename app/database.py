@@ -312,6 +312,7 @@ def get_latest_bank_status() -> List[Dict[str, Any]]:
             "short_name": bank["short_name"],
             "code": bank["code"],
             "color": bank["color"],
+            "logo_url": bank.get("logo_url", ""),
             "bg_soft": bank["bg_soft"],
             "border_color": bank["border_color"],
             "text_color": bank["text_color"],

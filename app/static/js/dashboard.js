@@ -17,13 +17,13 @@ document.addEventListener("DOMContentLoaded", () => {
     setupAutoRefresh();
 });
 
-// Estilos monocromáticos sólidos de linha para os 5 bancos
-const MONO_BANK_STYLES = {
-    "itau": { color: "#ffffff", dash: [] },
-    "sicredi": { color: "#e4e4e7", dash: [6, 4] },
-    "sicoob": { color: "#a1a1aa", dash: [] },
-    "bb": { color: "#71717a", dash: [4, 4] },
-    "bradesco": { color: "#52525b", dash: [2, 2] }
+// Cores oficiais dos bancos para o gráfico de latência
+const OFFICIAL_BANK_COLORS = {
+    "itau": "#EC7000",      // Laranja Itaú
+    "sicredi": "#00933B",   // Verde Sicredi
+    "sicoob": "#00AE9D",    // Turquesa Sicoob
+    "bb": "#FEE100",        // Amarelo Ouro BB
+    "bradesco": "#CC092F"   // Vermelho Bradesco
 };
 
 // Inicialização do Gráfico Chart.js
@@ -53,21 +53,22 @@ function initChart() {
                     labels: {
                         color: "#ffffff",
                         usePointStyle: true,
-                        boxWidth: 8,
-                        font: { size: 11, family: "Inter, sans-serif", weight: "bold" }
+                        boxWidth: 10,
+                        padding: 16,
+                        font: { size: 12, family: "Inter, sans-serif", weight: "600" }
                     }
                 },
                 tooltip: {
-                    backgroundColor: "#000000",
+                    backgroundColor: "#09090b",
                     titleColor: "#ffffff",
                     bodyColor: "#d4d4d8",
-                    borderColor: "#3f3f46",
+                    borderColor: "#27272a",
                     borderWidth: 1,
-                    padding: 10,
-                    cornerRadius: 4,
+                    padding: 12,
+                    cornerRadius: 6,
                     callbacks: {
                         label: function(context) {
-                            return `${context.dataset.label}: ${context.parsed.y} ms`;
+                            return ` ${context.dataset.label}: ${context.parsed.y} ms`;
                         }
                     }
                 }
@@ -93,7 +94,7 @@ function initChart() {
     loadChartData();
 }
 
-// Carregar Dados do Gráfico
+// Carregar Dados do Gráfico com Cores Oficiais
 async function loadChartData() {
     if (!latencyChart) return;
     try {
@@ -103,17 +104,17 @@ async function loadChartData() {
 
         latencyChart.data.labels = data.labels;
         latencyChart.data.datasets = data.datasets.map(ds => {
-            const style = MONO_BANK_STYLES[ds.bank_id] || { color: "#a1a1aa", dash: [] };
+            const color = OFFICIAL_BANK_COLORS[ds.bank_id] || ds.color || "#ffffff";
             return {
                 label: ds.label,
                 data: ds.data,
-                borderColor: style.color,
-                borderDash: style.dash,
-                borderWidth: 2,
-                pointRadius: 2.5,
-                pointHoverRadius: 5,
-                pointBackgroundColor: style.color,
-                tension: 0.2,
+                borderColor: color,
+                backgroundColor: color,
+                borderWidth: 2.5,
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                pointBackgroundColor: color,
+                tension: 0.3,
                 fill: false
             };
         });

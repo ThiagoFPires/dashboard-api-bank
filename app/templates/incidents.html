@@ -38,8 +38,9 @@
                         </span>
                         {% endif %}
 
-                        <span class="px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-zinc-950 text-zinc-300 border border-zinc-800">
-                            {{ inc.bank_id }}
+                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-zinc-950 text-zinc-300 border border-zinc-800">
+                            <img src="/static/img/{{ inc.bank_id }}.svg" alt="{{ inc.bank_id }}" class="w-3.5 h-3.5 rounded object-contain" />
+                            <span>{{ inc.bank_id }}</span>
                         </span>
 
                         <span class="text-[11px] text-zinc-400">

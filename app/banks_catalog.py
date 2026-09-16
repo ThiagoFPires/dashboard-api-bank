@@ -1,6 +1,6 @@
 """
 Catálogo dos Bancos e Serviços Monitorados.
-Paleta estritamente monocromática (preto, branco e tons sólidos de cinza, sem degradês).
+Contém metadados de marca, cores oficiais dos bancos para o gráfico e URLs das logos SVG.
 """
 
 BANKS_CATALOG = [
@@ -9,7 +9,8 @@ BANKS_CATALOG = [
         "name": "Itaú Unibanco",
         "short_name": "Itaú",
         "code": "341",
-        "color": "#ffffff",
+        "color": "#EC7000",
+        "logo_url": "/static/img/itau.svg",
         "bg_soft": "#27272a",
         "border_color": "#52525b",
         "text_color": "#ffffff",
@@ -61,7 +62,8 @@ BANKS_CATALOG = [
         "name": "Sicredi",
         "short_name": "Sicredi",
         "code": "748",
-        "color": "#e4e4e7",
+        "color": "#00933B",
+        "logo_url": "/static/img/sicredi.svg",
         "bg_soft": "#27272a",
         "border_color": "#52525b",
         "text_color": "#ffffff",
@@ -113,7 +115,8 @@ BANKS_CATALOG = [
         "name": "Sicoob",
         "short_name": "Sicoob",
         "code": "756",
-        "color": "#d4d4d8",
+        "color": "#00AE9D",
+        "logo_url": "/static/img/sicoob.svg",
         "bg_soft": "#27272a",
         "border_color": "#52525b",
         "text_color": "#ffffff",
@@ -165,7 +168,8 @@ BANKS_CATALOG = [
         "name": "Banco do Brasil",
         "short_name": "Banco do Brasil",
         "code": "001",
-        "color": "#a1a1aa",
+        "color": "#FEE100",
+        "logo_url": "/static/img/bb.svg",
         "bg_soft": "#27272a",
         "border_color": "#52525b",
         "text_color": "#ffffff",
@@ -217,7 +221,8 @@ BANKS_CATALOG = [
         "name": "Banco Bradesco",
         "short_name": "Bradesco",
         "code": "237",
-        "color": "#71717a",
+        "color": "#CC092F",
+        "logo_url": "/static/img/bradesco.svg",
         "bg_soft": "#27272a",
         "border_color": "#52525b",
         "text_color": "#ffffff",

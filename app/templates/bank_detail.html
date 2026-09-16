@@ -11,23 +11,21 @@
 
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 pt-2">
             <div class="flex items-center gap-4">
-                <div class="w-14 h-14 rounded-lg flex items-center justify-center font-bold text-xl bg-black border border-zinc-700 text-white font-mono">
-                    {{ bank.code }}
-                </div>
+                <img src="{{ bank.logo_url }}" alt="{{ bank.name }}" class="w-14 h-14 rounded-xl object-contain border border-zinc-700 bg-black p-1 shadow-md shrink-0" />
                 <div>
                     <div class="flex items-center gap-2">
                         <h1 class="text-xl font-bold text-white tracking-tight">{{ bank.name }}</h1>
                         {% if bank.status == 'operational' %}
-                        <span class="px-2.5 py-0.5 rounded text-xs font-semibold bg-zinc-800 text-white border border-zinc-700 flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-white"></span> Operacional
+                        <span class="px-2.5 py-0.5 rounded text-xs font-semibold bg-zinc-950 text-emerald-400 border border-emerald-500/40 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-[#22c55e]"></span> Bom Estado
                         </span>
                         {% elif bank.status == 'degraded' %}
-                        <span class="px-2.5 py-0.5 rounded text-xs font-semibold bg-zinc-800 text-zinc-300 border border-zinc-600 flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-zinc-400"></span> Lentidão
+                        <span class="px-2.5 py-0.5 rounded text-xs font-semibold bg-zinc-950 text-yellow-400 border border-yellow-500/40 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-[#eab308]"></span> Oscilando
                         </span>
                         {% else %}
-                        <span class="px-2.5 py-0.5 rounded text-xs font-semibold bg-zinc-950 text-zinc-400 border border-zinc-800 flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-zinc-600"></span> Instável
+                        <span class="px-2.5 py-0.5 rounded text-xs font-semibold bg-zinc-950 text-red-400 border border-red-500/40 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-[#ef4444]"></span> Caiu
                         </span>
                         {% endif %}
                     </div>
