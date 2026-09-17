@@ -162,57 +162,19 @@ def record_check(bank_id: str, service_id: str, status_code: Optional[int],
     
     if status == "outage":
         cursor.execute("""
-            SELECT id, severity FROM incidents 
+            SELECT id FROM incidents 
             WHERE bank_id = ? AND service_id = ? AND status = 'active'
         """, (bank_id, service_id))
-        existing = cursor.fetchone()
-        if not existing:
-            bank_obj = next((b for b in BANKS_CATALOG if b["id"] == bank_id), None)
-            svc_name = service_id.upper()
-            if bank_obj:
-                svc_obj = next((s for s in bank_obj["services"] if s["id"] == service_id), None)
-                if svc_obj:
-                    svc_name = svc_obj["name"]
-            
+        if not cursor.fetchone():
             cursor.execute("""
                 INSERT INTO incidents (bank_id, service_id, title, description, severity, status, started_at)
                 VALUES (?, ?, ?, ?, 'critical', 'active', ?)
             """, (
                 bank_id, service_id,
-                f"API Indisponível (Queda): {svc_name}",
-                f"Falha de resposta: {error_message or 'HTTP 5xx ou Timeout de Conexão'}",
+                f"API Indisponível (Queda): {service_id}",
+                f"Falha de resposta: {error_message or 'HTTP 5xx ou Timeout'}",
                 now_str
             ))
-        elif existing["severity"] != "critical":
-            cursor.execute("""
-                UPDATE incidents 
-                SET severity = 'critical', description = ?
-                WHERE id = ?
-            """, (f"Agravamento para Queda Total: {error_message or 'Timeout/5xx'}", existing["id"]))
-
-    elif status == "degraded":
-        cursor.execute("""
-            SELECT id FROM incidents 
-            WHERE bank_id = ? AND service_id = ? AND status = 'active'
-        """, (bank_id, service_id))
-        if not cursor.fetchone():
-            bank_obj = next((b for b in BANKS_CATALOG if b["id"] == bank_id), None)
-            svc_name = service_id.upper()
-            if bank_obj:
-                svc_obj = next((s for s in bank_obj["services"] if s["id"] == service_id), None)
-                if svc_obj:
-                    svc_name = svc_obj["name"]
-            
-            cursor.execute("""
-                INSERT INTO incidents (bank_id, service_id, title, description, severity, status, started_at)
-                VALUES (?, ?, ?, ?, 'warning', 'active', ?)
-            """, (
-                bank_id, service_id,
-                f"API Oscilando (Latência Alta): {svc_name}",
-                f"Instabilidade detectada: {error_message or f'Latência atingiu {round(latency_ms)}ms'}",
-                now_str
-            ))
-
     elif status == "operational":
         cursor.execute("""
             UPDATE incidents 
@@ -401,20 +363,6 @@ def get_system_summary() -> Dict[str, Any]:
     cursor = conn.cursor()
     cursor.execute("SELECT COUNT(*) as count FROM incidents WHERE status = 'active'")
     active_incidents = cursor.fetchone()["count"]
-
-    cursor.execute("""
-        SELECT id, bank_id, service_id, title, description, severity, status, started_at 
-        FROM incidents 
-        WHERE status = 'active'
-        ORDER BY started_at DESC
-    """)
-    active_incidents_list = [dict(r) for r in cursor.fetchall()]
-    
-    for inc in active_incidents_list:
-        b = next((x for x in BANKS_CATALOG if x["id"] == inc.get("bank_id")), None)
-        inc["bank_name"] = b["name"] if b else inc.get("bank_id", "").upper()
-        inc["bank_short_name"] = b["short_name"] if b else inc.get("bank_id", "").upper()
-        inc["bank_logo"] = f"/static/img/{inc.get('bank_id')}.svg"
     
     cursor.execute("SELECT COUNT(*) as count FROM service_checks")
     total_checks = cursor.fetchone()["count"]
@@ -430,7 +378,6 @@ def get_system_summary() -> Dict[str, Any]:
         "avg_latency_ms": avg_latency,
         "overall_uptime": overall_uptime,
         "active_incidents": active_incidents,
-        "active_incidents_list": active_incidents_list,
         "total_checks": total_checks,
         "last_checked_at": get_brasilia_now().strftime("%H:%M:%S")
     }
@@ -483,7 +430,7 @@ def get_incidents(status_filter: Optional[str] = None, limit: int = 50) -> List[
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    if status_filter and status_filter != "all":
+    if status_filter:
         cursor.execute("""
             SELECT * FROM incidents 
             WHERE status = ? 
@@ -499,42 +446,6 @@ def get_incidents(status_filter: Optional[str] = None, limit: int = 50) -> List[
     rows = cursor.fetchall()
     incidents = [dict(r) for r in rows]
     conn.close()
-
-    for inc in incidents:
-        bank = next((b for b in BANKS_CATALOG if b["id"] == inc.get("bank_id")), None)
-        inc["bank_name"] = bank["name"] if bank else inc.get("bank_id", "").upper()
-        inc["bank_short_name"] = bank["short_name"] if bank else inc.get("bank_id", "").upper()
-        inc["bank_logo"] = f"/static/img/{inc.get('bank_id')}.svg"
-
-        if inc.get("resolved_at") and inc.get("started_at"):
-            try:
-                t1 = datetime.strptime(inc["started_at"], "%Y-%m-%d %H:%M:%S")
-                t2 = datetime.strptime(inc["resolved_at"], "%Y-%m-%d %H:%M:%S")
-                diff_sec = max(1, int((t2 - t1).total_seconds()))
-                if diff_sec < 60:
-                    inc["duration_str"] = f"{diff_sec}s"
-                elif diff_sec < 3600:
-                    inc["duration_str"] = f"{diff_sec // 60}m {diff_sec % 60}s"
-                else:
-                    inc["duration_str"] = f"{diff_sec // 3600}h {(diff_sec % 3600) // 60}m"
-            except Exception:
-                inc["duration_str"] = None
-        elif inc.get("started_at"):
-            try:
-                t1 = datetime.strptime(inc["started_at"], "%Y-%m-%d %H:%M:%S")
-                t_now = get_brasilia_now()
-                diff_sec = max(1, int((t_now - t1).total_seconds()))
-                if diff_sec < 60:
-                    inc["duration_str"] = f"há {diff_sec}s"
-                elif diff_sec < 3600:
-                    inc["duration_str"] = f"há {diff_sec // 60}m"
-                else:
-                    inc["duration_str"] = f"há {diff_sec // 3600}h"
-            except Exception:
-                inc["duration_str"] = None
-        else:
-            inc["duration_str"] = None
-
     return incidents
 
 def resolve_incident(incident_id: int):

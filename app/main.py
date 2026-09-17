@@ -94,16 +94,15 @@ async def bank_detail_page(request: Request, bank_id: str):
     )
 
 @app.get("/incidents", response_class=HTMLResponse)
-async def incidents_page(request: Request, status: Optional[str] = None):
+async def incidents_page(request: Request):
     """Página de gestão e histórico de incidentes."""
-    incidents = get_incidents(status_filter=status)
+    incidents = get_incidents()
     return templates.TemplateResponse(
         request=request,
         name="incidents.html",
         context={
             "active_page": "incidents",
-            "incidents": incidents,
-            "status_filter": status or "all"
+            "incidents": incidents
         }
     )
 

@@ -9,15 +9,10 @@
 let latencyChart = null;
 let isAutoRefreshActive = true;
 let refreshIntervalTimer = null;
-let previousActiveIncidents = -1;
-let tabBlinkTimer = null;
-let originalDocumentTitle = document.title || "Dashboard Executivo - Monitor de APIs Bancárias";
-let webNotificationsEnabled = false;
 
 // Inicialização
 document.addEventListener("DOMContentLoaded", () => {
     initChart();
-    initNotificationStatus();
     loadDashboardData();
     setupAutoRefresh();
 });
@@ -222,9 +217,6 @@ function updateSummaryUI(summary) {
             statusPill.innerHTML = `<span class="w-2.5 h-2.5 rounded-full bg-[#ef4444]"></span> Caiu (Fora)`;
         }
     }
-
-    // Gestão de Incidentes em Tempo Real: Aba do Navegador, Banner e Navbar
-    handleIncidentAlerts(summary);
 }
 
 // Atualizar Cards dos Bancos com Indicador de Calor
@@ -393,166 +385,4 @@ function showToast(message, type = "info") {
         toast.classList.add("opacity-0", "translate-y-2");
         setTimeout(() => toast.remove(), 250);
     }, 3500);
-}
-
-// ==========================================
-// Gestão de Notificações na Aba e no Dashboard
-// ==========================================
-
-function handleIncidentAlerts(summary) {
-    const activeCount = summary.active_incidents || 0;
-    const incidentsList = summary.active_incidents_list || [];
-
-    // 1. Atualizar Aba do Navegador (Título piscante)
-    updateTabIncidentAlert(activeCount, incidentsList);
-
-    // 2. Atualizar Badge na Navbar
-    const navBadge = document.getElementById("navIncidentBadge");
-    if (navBadge) {
-        if (activeCount > 0) {
-            navBadge.innerText = activeCount;
-            navBadge.classList.remove("hidden");
-        } else {
-            navBadge.classList.add("hidden");
-        }
-    }
-
-    // 3. Atualizar Banner no Topo do Dashboard
-    const bannerContainer = document.getElementById("activeIncidentsBannerContainer");
-    const bannerCount = document.getElementById("activeIncidentCountText");
-    const bannerDetail = document.getElementById("activeIncidentDetailText");
-
-    if (bannerContainer) {
-        if (activeCount > 0) {
-            bannerContainer.classList.remove("hidden");
-            if (bannerCount) bannerCount.innerText = `⚠️ ${activeCount} Incidente(s) em Andamento`;
-            if (bannerDetail) {
-                if (incidentsList.length > 0) {
-                    const first = incidentsList[0];
-                    bannerDetail.innerText = `${first.bank_short_name || first.bank_id}: ${first.title} (detectado às ${first.started_at})`;
-                } else {
-                    bannerDetail.innerText = "Instabilidade ou queda de gateway bancário detectada.";
-                }
-            }
-        } else {
-            bannerContainer.classList.add("hidden");
-        }
-    }
-
-    // 4. Detecção de Mudança de Estado: Abertura e Auto-Resolução
-    if (previousActiveIncidents !== -1) {
-        if (activeCount > previousActiveIncidents) {
-            // Novo incidente acabou de acontecer
-            const latestInc = incidentsList[0];
-            const msg = latestInc ? `${latestInc.bank_short_name || 'Banco'}: ${latestInc.title}` : "Novo incidente detectado!";
-            showToast(`🚨 Incidente Aberto: ${msg}`, "error");
-            sendDesktopNotification("🚨 Alerta: Incidente Detectado", msg, latestInc ? latestInc.bank_logo : undefined);
-        } else if (activeCount < previousActiveIncidents && previousActiveIncidents > 0) {
-            // Incidente foi resolvido automaticamente!
-            showToast("✅ Incidente resolvido automaticamente: serviço restabelecido!", "success");
-            sendDesktopNotification("✅ Incidente Resolvido", "Os serviços bancários normalizaram e o incidente foi marcado como Resolvido automaticamente.");
-        }
-    }
-    previousActiveIncidents = activeCount;
-}
-
-// Alternar título da aba do navegador para chamar atenção quando houver incidentes
-function updateTabIncidentAlert(activeCount, incidentsList) {
-    if (activeCount > 0) {
-        if (!tabBlinkTimer) {
-            let isAlertState = true;
-            tabBlinkTimer = setInterval(() => {
-                if (isAlertState) {
-                    const bankPrefix = (incidentsList && incidentsList.length > 0) ? `${incidentsList[0].bank_short_name || 'Alerta'}` : 'Alerta';
-                    document.title = `(${activeCount}) 🔴 ${bankPrefix}: Incidente Detectado!`;
-                } else {
-                    document.title = `(${activeCount}) ⚠️ Atenção | Monitor de APIs Bancárias`;
-                }
-                isAlertState = !isAlertState;
-            }, 1200);
-        }
-    } else {
-        if (tabBlinkTimer) {
-            clearInterval(tabBlinkTimer);
-            tabBlinkTimer = null;
-        }
-        document.title = originalDocumentTitle;
-    }
-}
-
-// Notificações Nativas do Sistema Operacional (Web Notification API)
-function initNotificationStatus() {
-    if ("Notification" in window) {
-        if (Notification.permission === "granted") {
-            webNotificationsEnabled = true;
-            updateNotifyButtonUI("granted");
-        } else if (Notification.permission === "denied") {
-            updateNotifyButtonUI("denied");
-        } else {
-            updateNotifyButtonUI("default");
-        }
-    } else {
-        const btn = document.getElementById("btnNotifyPermission");
-        if (btn) btn.classList.add("hidden");
-    }
-}
-
-async function toggleWebNotifications() {
-    if (!("Notification" in window)) {
-        showToast("Seu navegador não suporta notificações de área de trabalho.", "warning");
-        return;
-    }
-
-    if (Notification.permission === "granted") {
-        showToast("As notificações na área de trabalho já estão ativas!", "info");
-        return;
-    }
-
-    try {
-        const permission = await Notification.requestPermission();
-        if (permission === "granted") {
-            webNotificationsEnabled = true;
-            updateNotifyButtonUI("granted");
-            showToast("🔔 Alertas na área de trabalho ativados com sucesso!", "success");
-            sendDesktopNotification("Monitor de APIs Bancárias", "Alertas em tempo real ativados para incidentes!");
-        } else {
-            updateNotifyButtonUI("denied");
-            showToast("Permissão para notificações não concedida.", "warning");
-        }
-    } catch (e) {
-        console.error("Erro ao solicitar permissão de notificações:", e);
-    }
-}
-
-function updateNotifyButtonUI(status) {
-    const icon = document.getElementById("notifyIcon");
-    const text = document.getElementById("notifyText");
-    const btn = document.getElementById("btnNotifyPermission");
-    if (!btn) return;
-
-    if (status === "granted") {
-        if (icon) icon.innerText = "🔔";
-        if (text) text.innerText = "Alertas Ativos";
-        btn.className = "px-3 py-1.5 rounded text-xs font-semibold border bg-zinc-950 text-emerald-400 border-emerald-500/40 flex items-center gap-1.5";
-    } else if (status === "denied") {
-        if (icon) icon.innerText = "🔕";
-        if (text) text.innerText = "Alertas Bloqueados";
-        btn.className = "px-3 py-1.5 rounded text-xs font-semibold border bg-zinc-950 text-zinc-500 border-zinc-800 flex items-center gap-1.5";
-    } else {
-        if (icon) icon.innerText = "🔔";
-        if (text) text.innerText = "Alertas na Área de Trabalho";
-        btn.className = "px-3 py-1.5 rounded text-xs font-semibold border bg-zinc-800 text-zinc-300 border-zinc-700 hover:text-white hover:bg-zinc-700 transition-all flex items-center gap-1.5";
-    }
-}
-
-function sendDesktopNotification(title, body, icon = "/static/img/itau.svg") {
-    if (!("Notification" in window) || Notification.permission !== "granted") return;
-    try {
-        new Notification(title, {
-            body: body,
-            icon: icon
-        });
-    } catch (e) {
-        console.error("Erro ao enviar notificação de desktop:", e);
-    }
 }
