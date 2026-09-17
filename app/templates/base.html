@@ -40,6 +40,22 @@
             font-family: 'JetBrains Mono', monospace;
         }
     </style>
+    
+    <!-- Script de Inicialização Instantânea do Tema (Anti-Flicker) -->
+    <script>
+        (function() {
+            try {
+                var theme = localStorage.getItem('bank_monitor_theme');
+                if (theme === 'light') {
+                    document.documentElement.classList.remove('dark');
+                    document.documentElement.classList.add('light');
+                } else {
+                    document.documentElement.classList.add('dark');
+                    document.documentElement.classList.remove('light');
+                }
+            } catch (e) {}
+        })();
+    </script>
 </head>
 <body class="bg-black text-zinc-100 min-h-screen flex flex-col antialiased">
     
@@ -83,9 +99,21 @@
                     </a>
                 </nav>
 
-                <!-- Actions: Status Pill & Solid Check Now Button -->
-                <div class="flex items-center gap-3">
-                    <div id="globalStatusPill" class="px-3 py-1 rounded text-xs font-semibold flex items-center gap-2 border bg-zinc-900 text-zinc-200 border-zinc-700">
+                <!-- Actions: Theme Toggle, Status Pill & Solid Check Now Button -->
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <!-- Botão Alternador de Tema (Claro / Escuro) -->
+                    <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2 rounded text-xs border bg-zinc-900 text-zinc-300 border-zinc-700 hover:text-white hover:bg-zinc-800 transition-all flex items-center justify-center" title="Alternar entre tema claro e escuro">
+                        <!-- Ícone da Lua (exibido no tema claro para alternar para o escuro) -->
+                        <svg id="moonIcon" class="w-4 h-4 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                        </svg>
+                        <!-- Ícone do Sol (exibido no tema escuro para alternar para o claro) -->
+                        <svg id="sunIcon" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 9h-1m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                        </svg>
+                    </button>
+
+                    <div id="globalStatusPill" class="hidden sm:flex px-3 py-1 rounded text-xs font-semibold items-center gap-2 border bg-zinc-900 text-zinc-200 border-zinc-700">
                         <span class="w-2 h-2 rounded-full bg-white status-dot-operational"></span>
                         <span>Operacional</span>
                     </div>
@@ -94,7 +122,8 @@
                         <svg id="checkAllIcon" class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
                         </svg>
-                        <span>Verificar Agora</span>
+                        <span class="hidden sm:inline">Verificar Agora</span>
+                        <span class="sm:hidden">Verificar</span>
                     </button>
                 </div>
 

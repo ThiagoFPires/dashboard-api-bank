@@ -12,6 +12,7 @@ let refreshIntervalTimer = null;
 
 // Inicialização
 document.addEventListener("DOMContentLoaded", () => {
+    initTheme();
     initChart();
     loadDashboardData();
     setupAutoRefresh();
@@ -28,13 +29,78 @@ const OFFICIAL_BANK_COLORS = {
 
 let currentChartFilter = "all";
 
+// Controle de Tema (Claro / Escuro)
+function initTheme() {
+    const isLight = document.documentElement.classList.contains("light");
+    updateThemeIcons(isLight ? "light" : "dark");
+}
+
+function updateThemeIcons(theme) {
+    const sunIcon = document.getElementById("sunIcon");
+    const moonIcon = document.getElementById("moonIcon");
+    if (sunIcon && moonIcon) {
+        if (theme === "light") {
+            sunIcon.classList.add("hidden");
+            moonIcon.classList.remove("hidden");
+        } else {
+            sunIcon.classList.remove("hidden");
+            moonIcon.classList.add("hidden");
+        }
+    }
+}
+
+function toggleTheme() {
+    const isDark = document.documentElement.classList.contains("dark");
+    if (isDark) {
+        document.documentElement.classList.remove("dark");
+        document.documentElement.classList.add("light");
+        localStorage.setItem("bank_monitor_theme", "light");
+        updateThemeIcons("light");
+        showToast("Tema claro ativado", "info");
+    } else {
+        document.documentElement.classList.remove("light");
+        document.documentElement.classList.add("dark");
+        localStorage.setItem("bank_monitor_theme", "dark");
+        updateThemeIcons("dark");
+        showToast("Tema escuro ativado", "info");
+    }
+    updateChartTheme();
+    applyChartFilter();
+}
+
+function updateChartTheme() {
+    if (!latencyChart) return;
+    const isDark = document.documentElement.classList.contains("dark");
+    const gridColor = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
+    const textColor = isDark ? "#a1a1aa" : "#64748b";
+
+    if (latencyChart.options.scales.x) {
+        latencyChart.options.scales.x.grid.color = gridColor;
+        latencyChart.options.scales.x.ticks.color = textColor;
+    }
+    if (latencyChart.options.scales.y) {
+        latencyChart.options.scales.y.grid.color = gridColor;
+        latencyChart.options.scales.y.ticks.color = textColor;
+    }
+
+    if (latencyChart.options.plugins && latencyChart.options.plugins.tooltip) {
+        latencyChart.options.plugins.tooltip.backgroundColor = isDark ? "#09090b" : "#ffffff";
+        latencyChart.options.plugins.tooltip.titleColor = isDark ? "#ffffff" : "#0f172a";
+        latencyChart.options.plugins.tooltip.bodyColor = isDark ? "#d4d4d8" : "#334155";
+        latencyChart.options.plugins.tooltip.borderColor = isDark ? "#27272a" : "#e2e8f0";
+    }
+
+    latencyChart.update();
+}
+
 // Inicialização do Gráfico Chart.js
 function initChart() {
     const ctx = document.getElementById("latencyChart");
     if (!ctx) return;
 
-    const gridColor = "rgba(255, 255, 255, 0.08)";
-    const textColor = "#a1a1aa";
+    const isDark = document.documentElement.classList.contains("dark");
+    const gridColor = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
+    const textColor = isDark ? "#a1a1aa" : "#64748b";
 
     latencyChart = new Chart(ctx, {
         type: "line",
@@ -54,10 +120,10 @@ function initChart() {
                     display: false // Usamos os botões interativos customizados acima do gráfico
                 },
                 tooltip: {
-                    backgroundColor: "#09090b",
-                    titleColor: "#ffffff",
-                    bodyColor: "#d4d4d8",
-                    borderColor: "#27272a",
+                    backgroundColor: isDark ? "#09090b" : "#ffffff",
+                    titleColor: isDark ? "#ffffff" : "#0f172a",
+                    bodyColor: isDark ? "#d4d4d8" : "#334155",
+                    borderColor: isDark ? "#27272a" : "#e2e8f0",
                     borderWidth: 1,
                     padding: 12,
                     cornerRadius: 6,

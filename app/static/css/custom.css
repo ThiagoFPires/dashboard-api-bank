@@ -77,3 +77,311 @@
 ::-webkit-scrollbar-thumb:hover {
     background: #3f3f46;
 }
+
+/* Transições suaves ao alternar temas */
+body, header, nav, footer, .bank-card, div, button, input, select {
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.15s ease;
+}
+
+/* ========================================================
+   TEMA CLARO (LIGHT THEME) - Ativado quando html tem classe 'light'
+   ======================================================== */
+
+html.light body {
+    background-color: #f8fafc !important; /* Slate 50 */
+    color: #0f172a !important; /* Slate 900 */
+}
+
+/* Cabeçalho */
+html.light header {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+}
+
+html.light header .bg-zinc-900 {
+    background-color: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+}
+
+html.light header .text-white {
+    color: #0f172a !important;
+}
+
+html.light header .bg-zinc-800 {
+    background-color: #e2e8f0 !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+}
+
+/* Menu Central de Navegação */
+html.light nav {
+    background-color: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+}
+
+html.light nav a.bg-white {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+
+html.light nav a.text-zinc-400 {
+    color: #64748b !important;
+}
+
+html.light nav a.text-zinc-400:hover {
+    color: #0f172a !important;
+    background-color: #e2e8f0 !important;
+}
+
+/* Botão Alternador de Tema */
+html.light #themeToggleBtn {
+    background-color: #f1f5f9 !important;
+    border-color: #cbd5e1 !important;
+    color: #334155 !important;
+}
+html.light #themeToggleBtn:hover {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+/* Pílula de Status Geral do Cabeçalho */
+html.light #globalStatusPill {
+    background-color: #ffffff !important;
+    color: #1e293b !important;
+    border-color: #cbd5e1 !important;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+/* Botão Verificar Agora e Ações Principais */
+html.light #btnCheckAll,
+html.light button.bg-white.text-black {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+html.light #btnCheckAll:hover,
+html.light button.bg-white.text-black:hover {
+    background-color: #1e293b !important;
+}
+html.light #btnCheckAll svg,
+html.light button.bg-white.text-black svg {
+    color: #ffffff !important;
+}
+
+/* Cards e Seções de Fundo */
+html.light .bg-zinc-900 {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    box-shadow: 0 1px 3px 0 rgba(15, 23, 42, 0.04);
+}
+
+html.light .bg-zinc-950 {
+    background-color: #f8fafc !important;
+    border-color: #e2e8f0 !important;
+}
+
+html.light .border-zinc-800 {
+    border-color: #e2e8f0 !important;
+}
+
+html.light .border-zinc-700 {
+    border-color: #cbd5e1 !important;
+}
+
+html.light .border-zinc-600 {
+    border-color: #94a3b8 !important;
+}
+
+/* Textos e Tipografia */
+html.light .text-white {
+    color: #0f172a !important;
+}
+
+html.light .text-zinc-100,
+html.light .text-zinc-200,
+html.light .text-zinc-300 {
+    color: #1e293b !important;
+}
+
+html.light .text-zinc-400 {
+    color: #64748b !important;
+}
+
+html.light .text-zinc-500 {
+    color: #94a3b8 !important;
+}
+
+/* Cores de Status no Tema Claro com Alto Contraste */
+html.light .text-emerald-400 {
+    color: #059669 !important; /* Emerald 600 */
+}
+
+html.light .text-yellow-400 {
+    color: #d97706 !important; /* Amber 600 */
+}
+
+html.light .text-red-400 {
+    color: #dc2626 !important; /* Red 600 */
+}
+
+/* Botões de Ping e Controles dos Cards */
+html.light button[id^="btn-ping-"] {
+    background-color: #f1f5f9 !important;
+    color: #1e293b !important;
+    border-color: #cbd5e1 !important;
+}
+html.light button[id^="btn-ping-"]:hover {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+html.light button[id^="btn-ping-"] svg {
+    color: #475569 !important;
+}
+
+/* Badges nos Cards dos Bancos */
+html.light div[id^="bank-badge-"] span {
+    background-color: #f8fafc !important;
+}
+
+/* Hero & Auto-Refresh */
+html.light #kpiLastChecked {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    border-color: #e2e8f0 !important;
+}
+
+html.light #autoRefreshToggle {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+html.light #autoRefreshToggle:hover {
+    background-color: #e2e8f0 !important;
+}
+
+/* Filtros de Gráficos e Tabelas */
+html.light .chart-filter-btn.bg-white,
+html.light .table-filter-btn.bg-white {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    border-color: #0f172a !important;
+}
+
+html.light .chart-filter-btn.bg-zinc-950 {
+    background-color: #ffffff !important;
+    color: #64748b !important;
+    border-color: #e2e8f0 !important;
+}
+html.light .chart-filter-btn.bg-zinc-950:hover {
+    background-color: #f8fafc !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+html.light .chart-filter-btn.bg-zinc-800,
+html.light .table-filter-btn.bg-zinc-800 {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    border-color: #e2e8f0 !important;
+}
+html.light .chart-filter-btn.bg-zinc-800:hover,
+html.light .table-filter-btn.bg-zinc-800:hover {
+    background-color: #e2e8f0 !important;
+    color: #0f172a !important;
+}
+
+/* Tabela de Serviços e Histórico */
+html.light table thead {
+    background-color: #f8fafc !important;
+    color: #64748b !important;
+    border-color: #e2e8f0 !important;
+}
+
+html.light table tbody tr:hover {
+    background-color: #f8fafc !important;
+}
+
+html.light table td span.bg-zinc-800 {
+    background-color: #f1f5f9 !important;
+    color: #334155 !important;
+    border-color: #cbd5e1 !important;
+}
+
+html.light .divide-zinc-800 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #e2e8f0 !important;
+}
+
+/* Hover nos Cards de Banco */
+html.light .bank-card:hover {
+    border-color: #94a3b8 !important;
+    box-shadow: 0 4px 12px -2px rgba(15, 23, 42, 0.08);
+}
+
+/* Rodapé */
+html.light footer {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #64748b !important;
+}
+html.light footer a:hover {
+    color: #0f172a !important;
+}
+
+/* Formulários de Configuração */
+html.light input[type="number"],
+html.light input[type="text"],
+html.light select {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+html.light input[type="number"]:focus,
+html.light input[type="text"]:focus,
+html.light select:focus {
+    border-color: #64748b !important;
+    box-shadow: 0 0 0 1px #64748b;
+}
+
+html.light label.cursor-pointer.bg-zinc-800 {
+    background-color: #f1f5f9 !important;
+    border-color: #0f172a !important;
+}
+html.light label.cursor-pointer.bg-zinc-950 {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+}
+html.light label.cursor-pointer.bg-zinc-950:hover {
+    border-color: #cbd5e1 !important;
+}
+
+/* Central de Incidentes */
+html.light span.bg-white.text-black {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+}
+html.light span.bg-white.text-black span {
+    background-color: #ffffff !important;
+}
+html.light span.bg-zinc-800.text-zinc-300 {
+    background-color: #f1f5f9 !important;
+    color: #475569 !important;
+    border-color: #cbd5e1 !important;
+}
+
+/* Barra superior da página de detalhes do banco */
+html.light .h-1.bg-white {
+    background-color: #0f172a !important;
+}
+
+/* Scrollbars no tema claro */
+html.light ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+html.light ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}
