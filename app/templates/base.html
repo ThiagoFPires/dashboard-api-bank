@@ -71,8 +71,9 @@
                     <a href="/" class="px-3.5 py-1.5 rounded text-xs font-medium {% if active_page == 'dashboard' %}bg-white text-black font-semibold{% else %}text-zinc-400 hover:text-white hover:bg-zinc-800{% endif %} transition-colors">
                         Dashboard
                     </a>
-                    <a href="/incidents" class="px-3.5 py-1.5 rounded text-xs font-medium {% if active_page == 'incidents' %}bg-white text-black font-semibold{% else %}text-zinc-400 hover:text-white hover:bg-zinc-800{% endif %} transition-colors">
-                        Incidentes
+                    <a href="/incidents" class="px-3.5 py-1.5 rounded text-xs font-medium {% if active_page == 'incidents' %}bg-white text-black font-semibold{% else %}text-zinc-400 hover:text-white hover:bg-zinc-800{% endif %} transition-colors flex items-center gap-1.5">
+                        <span>Incidentes</span>
+                        <span id="navIncidentBadge" class="hidden px-1.5 py-0.2 rounded-full text-[10px] font-bold bg-[#ef4444] text-white animate-pulse">0</span>
                     </a>
                     <a href="/settings" class="px-3.5 py-1.5 rounded text-xs font-medium {% if active_page == 'settings' %}bg-white text-black font-semibold{% else %}text-zinc-400 hover:text-white hover:bg-zinc-800{% endif %} transition-colors">
                         Configurações

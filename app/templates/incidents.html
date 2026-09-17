@@ -12,56 +12,75 @@
                 <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 <span>Central de Incidentes e Histórico de Eventos</span>
             </h1>
-            <p class="text-xs text-zinc-400 mt-1">Registro de anomalias, picos de latência e manutenções nos serviços bancários.</p>
+            <p class="text-xs text-zinc-400 mt-1">Monitoramento contínuo de anomalias com <strong>detecção imediata e auto-resolução</strong> ao normalizar.</p>
         </div>
 
-        <div class="flex items-center gap-2 font-mono text-xs text-zinc-400">
-            <span>Total: <strong class="text-white">{{ incidents | length }}</strong></span>
+        <!-- Filtros Rápidos de Status -->
+        <div class="flex items-center gap-2 font-mono text-xs">
+            <a href="/incidents" class="px-3 py-1.5 rounded font-semibold transition-all {% if not status_filter or status_filter == 'all' %}bg-white text-black{% else %}bg-zinc-800 text-zinc-300 hover:bg-zinc-700{% endif %}">
+                Todos ({{ incidents | length }})
+            </a>
+            <a href="/incidents?status=active" class="px-3 py-1.5 rounded font-semibold transition-all {% if status_filter == 'active' %}bg-[#ef4444] text-white{% else %}bg-zinc-800 text-red-300 hover:bg-zinc-700{% endif %}">
+                Em Aberto
+            </a>
+            <a href="/incidents?status=resolved" class="px-3 py-1.5 rounded font-semibold transition-all {% if status_filter == 'resolved' %}bg-emerald-600 text-white{% else %}bg-zinc-800 text-emerald-300 hover:bg-zinc-700{% endif %}">
+                Resolvidos
+            </a>
         </div>
     </div>
 
     <!-- Incidents Table / List - Solid Monochrome -->
     <div class="bg-zinc-900 border border-zinc-800 rounded-lg overflow-hidden">
         {% if incidents %}
-        <div class="divide-y divide-zinc-800">
+        <div class="divide-y divide-zinc-800" id="incidentsListContainer">
             {% for inc in incidents %}
             <div class="p-5 hover:bg-zinc-800/40 transition-colors flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div class="space-y-1.5 flex-1">
                     <div class="flex items-center gap-2 flex-wrap font-mono">
                         {% if inc.status == 'active' %}
-                        <span class="px-2 py-0.5 rounded text-[11px] font-bold bg-white text-black flex items-center gap-1.5">
-                            <span class="w-1.5 h-1.5 rounded-full bg-black"></span> ATIVO
+                        <span class="px-2.5 py-1 rounded text-[11px] font-bold bg-red-950 text-red-300 border border-red-500/40 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-[#ef4444] animate-ping"></span>
+                            <span>EM ABERTO</span>
                         </span>
                         {% else %}
-                        <span class="px-2 py-0.5 rounded text-[11px] font-semibold bg-zinc-800 text-zinc-300 border border-zinc-700">
-                            RESOLVIDO
+                        <span class="px-2.5 py-1 rounded text-[11px] font-semibold bg-zinc-950 text-emerald-400 border border-emerald-500/40 flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-[#22c55e]"></span>
+                            <span>RESOLVIDO</span>
                         </span>
                         {% endif %}
 
                         <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-bold uppercase bg-zinc-950 text-zinc-300 border border-zinc-800">
-                            <img src="/static/img/{{ inc.bank_id }}.svg" alt="{{ inc.bank_id }}" class="w-3.5 h-3.5 rounded object-contain" />
-                            <span>{{ inc.bank_id }}</span>
+                            <img src="{{ inc.bank_logo }}" alt="{{ inc.bank_short_name }}" class="w-4 h-4 rounded object-contain" />
+                            <span>{{ inc.bank_name }}</span>
                         </span>
 
                         <span class="text-[11px] text-zinc-400">
-                            • Severidade: {{ inc.severity | upper }}
+                            • Severidade: <strong class="{% if inc.severity == 'critical' %}text-red-400{% else %}text-yellow-400{% endif %} uppercase">{{ inc.severity }}</strong>
                         </span>
+
+                        {% if inc.duration_str %}
+                        <span class="text-[11px] text-zinc-400 font-mono">
+                            • Duração: <strong class="text-white font-mono">{{ inc.duration_str }}</strong>
+                        </span>
+                        {% endif %}
                     </div>
 
                     <h3 class="text-sm font-bold text-white">{{ inc.title }}</h3>
                     <p class="text-xs text-zinc-400 leading-relaxed max-w-3xl">{{ inc.description }}</p>
 
-                    <div class="flex items-center gap-4 text-xs text-zinc-500 pt-1 font-mono">
-                        <span>Início: {{ inc.started_at }}</span>
+                    <div class="flex items-center gap-4 text-xs text-zinc-500 pt-1 font-mono flex-wrap">
+                        <span>Início: <strong class="text-zinc-300">{{ inc.started_at }}</strong></span>
                         {% if inc.resolved_at %}
-                        <span>• Conclusão: {{ inc.resolved_at }}</span>
+                        <span>• Conclusão: <strong class="text-emerald-400">{{ inc.resolved_at }}</strong> (Auto-Resolvido)</span>
+                        {% else %}
+                        <span class="text-red-400">• Status: Aguardando normalização do serviço</span>
                         {% endif %}
                     </div>
                 </div>
 
                 {% if inc.status == 'active' %}
-                <div>
-                    <button onclick="resolveIncidentAction('{{ inc.id }}')" class="px-3 py-1.5 bg-white hover:bg-zinc-200 text-black rounded text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap">
+                <div class="shrink-0">
+                    <button onclick="resolveIncidentAction('{{ inc.id }}')" class="px-3.5 py-1.5 bg-white hover:bg-zinc-200 text-black rounded text-xs font-bold transition-all flex items-center gap-1.5 whitespace-nowrap shadow-sm">
                         <svg class="w-3.5 h-3.5 text-black" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                         <span>Marcar Resolvido</span>
                     </button>
@@ -73,8 +92,8 @@
         {% else %}
         <div class="p-12 text-center">
             <svg class="w-10 h-10 text-zinc-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-            <h3 class="text-sm font-bold text-white">Nenhum incidente registrado</h3>
-            <p class="text-xs text-zinc-500 mt-1">Todos os serviços bancários estão operando com estabilidade e conformidade.</p>
+            <h3 class="text-sm font-bold text-white">Nenhum incidente encontrado</h3>
+            <p class="text-xs text-zinc-500 mt-1">Todos os serviços bancários monitorados estão operando com estabilidade e conformidade.</p>
         </div>
         {% endif %}
     </div>
@@ -83,16 +102,35 @@
 
 <script>
 async function resolveIncidentAction(incidentId) {
-    if (!confirm("Deseja marcar este incidente como resolvido?")) return;
+    if (!confirm("Deseja marcar manualmente este incidente como resolvido?")) return;
     try {
         const res = await fetch(`/api/incidents/${incidentId}/resolve`, { method: "POST" });
         if (res.ok) {
             showToast("Incidente marcado como resolvido!", "success");
-            setTimeout(() => window.location.reload(), 800);
+            setTimeout(() => window.location.reload(), 600);
         }
     } catch (e) {
         showToast("Erro ao resolver incidente.", "error");
     }
 }
+
+// Auto-atualização periódica da Central de Incidentes a cada 10 segundos
+setInterval(async () => {
+    try {
+        const res = await fetch("/api/summary");
+        if (res.ok) {
+            const summary = await res.json();
+            const badge = document.getElementById("navIncidentBadge");
+            if (badge) {
+                if (summary.active_incidents > 0) {
+                    badge.innerText = summary.active_incidents;
+                    badge.classList.remove("hidden");
+                } else {
+                    badge.classList.add("hidden");
+                }
+            }
+        }
+    } catch (e) {}
+}, 10000);
 </script>
 {% endblock %}
