@@ -153,13 +153,6 @@
 
                         <!-- BARRA DE CALOR (HEAT BAR) - Verde / Amarelo / Vermelho Sólidos -->
                         <div class="mt-3 pt-3 border-t border-zinc-800">
-                            <div class="flex items-center justify-between text-[10px] text-zinc-400 mb-1.5 font-mono">
-                                <span class="flex items-center gap-1">
-                                    <span>Indicador (1 barra = 1 min)</span>
-                                </span>
-                                <span>Últimos 24 min</span>
-                            </div>
-                            
                             <div class="heat-bar-container" id="heat-bar-{{ bank.bank_id }}">
                                 {% for b in bank.blocks %}
                                     <div class="heat-block {{ b.css_class }}" title="{{ b.time }} • {{ b.label }} ({{ b.latency_ms }}ms)"></div>
