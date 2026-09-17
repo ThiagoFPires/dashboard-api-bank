@@ -33,7 +33,7 @@ class Settings:
     TIMEZONE: str = "America/Sao_Paulo"
     
     # Intervalo de checagem automática em segundos
-    CHECK_INTERVAL_SECONDS: int = 300
+    CHECK_INTERVAL_SECONDS: int = 30
     
     # Limiares de latência em milissegundos
     LATENCY_NORMAL_THRESHOLD_MS: int = 600
@@ -47,7 +47,7 @@ class Settings:
     
     # Arquitetura Desacoplada (Serverless Vercel)
     # Tempo mínimo entre checagens externas para proteção de IP e rate limit (em segundos)
-    CACHE_TTL_SECONDS: int = int(os.getenv("CACHE_TTL_SECONDS", 300))
+    CACHE_TTL_SECONDS: int = int(os.getenv("CACHE_TTL_SECONDS", 30))
     # Chave de segurança para acionar cron externo
     CRON_SECRET_TOKEN: str = os.getenv("CRON_SECRET_TOKEN", "bank_monitor_cron_secret_2026")
 
