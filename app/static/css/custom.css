@@ -226,6 +226,42 @@ html.light .text-red-400 {
     color: #dc2626 !important; /* Red 600 */
 }
 
+/* Botões Secundários, Links de Detalhes e Elementos bg-zinc-800 no Tema Claro */
+html.light .bg-zinc-800 {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border-color: #cbd5e1 !important;
+}
+
+html.light a.bg-zinc-800,
+html.light button.bg-zinc-800,
+html.light .bank-detail-btn {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+    border: 1px solid #cbd5e1 !important;
+    font-weight: 600 !important;
+}
+
+html.light a.bg-zinc-800:hover,
+html.light button.bg-zinc-800:hover,
+html.light .bank-detail-btn:hover {
+    background-color: #e2e8f0 !important;
+    color: #000000 !important;
+    border-color: #94a3b8 !important;
+}
+
+html.light a.bg-zinc-800 svg,
+html.light button.bg-zinc-800 svg,
+html.light .bank-detail-btn svg {
+    color: #475569 !important;
+}
+
+html.light a.bg-zinc-800:hover svg,
+html.light button.bg-zinc-800:hover svg,
+html.light .bank-detail-btn:hover svg {
+    color: #000000 !important;
+}
+
 /* Botões de Ping e Controles dos Cards */
 html.light button[id^="btn-ping-"] {
     background-color: #f1f5f9 !important;
