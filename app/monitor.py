@@ -55,8 +55,8 @@ class BankMonitorEngine:
             code = resp.status_code
             
             # Avaliação do status:
-            # Em APIs financeiras, códigos 200, 201, 204 ou até 401/403/405 confirmam que o gateway bancário está de pé
-            if code in [200, 201, 204, 301, 302, 401, 403, 405]:
+            # Em APIs financeiras, códigos 200, 201, 204 ou 400/401/403/404/405 confirmam que o gateway bancário está de pé
+            if code in [200, 201, 204, 301, 302, 400, 401, 403, 404, 405]:
                 if elapsed_ms > settings.LATENCY_DEGRADED_THRESHOLD_MS:
                     status = "degraded"
                     msg = f"Latência elevada ({elapsed_ms}ms)"

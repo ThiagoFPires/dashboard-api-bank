@@ -23,7 +23,7 @@ BANKS_CATALOG = [
                 "id": "itau-pix",
                 "name": "Pix API",
                 "description": "Emissão de cobrança imediata (QR Code dinâmico) e webhooks de recebimento",
-                "endpoint_url": "https://api.itau.com.br/sandbox/pix/v2",
+                "endpoint_url": "https://api.itau.com.br/pix_recebimentos/v2/cob",
                 "method": "GET",
                 "expected_status": 200,
                 "importance": "critical"
@@ -32,7 +32,7 @@ BANKS_CATALOG = [
                 "id": "itau-boletos",
                 "name": "Boletos & Cobrança",
                 "description": "Emissão, alteração de vencimento, cancelamento e consulta de boletos",
-                "endpoint_url": "https://api.itau.com.br/sandbox/boletos/v2",
+                "endpoint_url": "https://api.itau.com.br/cash_management/v2/boletos",
                 "method": "GET",
                 "expected_status": 200,
                 "importance": "high"
@@ -41,7 +41,7 @@ BANKS_CATALOG = [
                 "id": "itau-extrato",
                 "name": "Extrato & Conciliação",
                 "description": "Consulta de extratos por período e conciliação bancária automatizada",
-                "endpoint_url": "https://api.itau.com.br/sandbox/extrato/v1",
+                "endpoint_url": "https://api.itau.com.br/cash_management/v2/extratos",
                 "method": "GET",
                 "expected_status": 200,
                 "importance": "medium"
@@ -50,7 +50,7 @@ BANKS_CATALOG = [
                 "id": "itau-auth",
                 "name": "OAuth2 / STS",
                 "description": "Serviço de geração e validação de tokens mTLS e credenciais de acesso",
-                "endpoint_url": "https://sts.itau.com.br/as/token.oauth2",
+                "endpoint_url": "https://sts.itau.com.br/api/oauth/token",
                 "method": "GET",
                 "expected_status": 200,
                 "importance": "critical"
@@ -76,7 +76,7 @@ BANKS_CATALOG = [
                 "id": "sicredi-pix",
                 "name": "Pix Sicredi",
                 "description": "Liquidação instantânea, gestão de chaves Pix e webhooks",
-                "endpoint_url": "https://api-parceiro.sicredi.com.br/sb/pix/v2",
+                "endpoint_url": "https://api-parceiro.sicredi.com.br/pix/v2",
                 "method": "GET",
                 "expected_status": 200,
                 "importance": "critical"
@@ -85,7 +85,7 @@ BANKS_CATALOG = [
                 "id": "sicredi-boletos",
                 "name": "Cobrança Híbrida",
                 "description": "Boletos com código de barras tradicional e Pix QR Code acoplado",
-                "endpoint_url": "https://api-parceiro.sicredi.com.br/sb/cobranca/v3/boletos",
+                "endpoint_url": "https://api-parceiro.sicredi.com.br/cobranca/v3/boletos",
                 "method": "GET",
                 "expected_status": 200,
                 "importance": "high"
@@ -94,7 +94,7 @@ BANKS_CATALOG = [
                 "id": "sicredi-extrato",
                 "name": "Extrato Cooperado",
                 "description": "Consulta de extratos e saldos em contas correntes do Sicredi",
-                "endpoint_url": "https://api-parceiro.sicredi.com.br/sb/extrato/v1",
+                "endpoint_url": "https://api-parceiro.sicredi.com.br/extrato/v1",
                 "method": "GET",
                 "expected_status": 200,
                 "importance": "medium"
