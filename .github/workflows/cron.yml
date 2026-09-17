@@ -1,0 +1,18 @@
+name: Banking API Health Check Cron
+
+on:
+  schedule:
+    # Dispara a cada 15 minutos gratuitamente via GitHub Actions
+    - cron: '*/15 * * * *'
+  workflow_dispatch: # Permite disparar manualmente pelo painel do GitHub
+
+jobs:
+  ping-monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Banking Probes
+        run: |
+          # Altere a URL abaixo para a sua URL da Vercel após o deploy
+          TARGET_URL="https://dashboard-api-bank.vercel.app/api/cron/check?token=bank_monitor_cron_secret_2026"
+          echo "Disparando sondagem em $TARGET_URL..."
+          curl -s -f "$TARGET_URL" || echo "Sondagem disparada ou endpoint ainda em provisionamento."

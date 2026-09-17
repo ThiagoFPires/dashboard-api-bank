@@ -200,3 +200,42 @@ class BankMonitorEngine:
 
 # Instância singleton do monitor
 monitor_engine = BankMonitorEngine()
+
+# Controle de Concorrência & Cache Lock para Arquitetura Desacoplada (Serverless / Vercel)
+_last_probe_timestamp: float = 0.0
+_probe_lock = asyncio.Lock()
+
+async def run_decoupled_probe_if_needed(force: bool = False) -> bool:
+    """
+    Executa um ciclo de probes assíncrono em segundo plano (Background Task)
+    apenas se o tempo decorrido desde a última sondagem for maior que o CACHE_TTL_SECONDS.
+    Possui trava de concorrência (Mutex Lock) para que múltiplos acessos simultâneos
+    não gerem requisições duplicadas aos bancos.
+    """
+    global _last_probe_timestamp
+    now = time.time()
+    ttl = settings.CACHE_TTL_SECONDS
+
+    # 1. Checagem rápida de TTL (sem lock)
+    if not force and (now - _last_probe_timestamp < ttl):
+        return False
+
+    # 2. Se já houver um probe sendo executado por outra requisição, ignora
+    if _probe_lock.locked():
+        return False
+
+    async with _probe_lock:
+        # Re-avaliação dentro do lock
+        now = time.time()
+        if not force and (now - _last_probe_timestamp < ttl):
+            return False
+
+        logger.info(f"⚡ [Desacoplado] Disparando sondagem assíncrona nos bancos (TTL: {ttl}s)...")
+        try:
+            await monitor_engine.check_all_banks()
+            _last_probe_timestamp = time.time()
+            return True
+        except Exception as e:
+            logger.error(f"Erro na sondagem desacoplada: {e}")
+            return False
+

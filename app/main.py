@@ -4,6 +4,7 @@ Rotas de UI (Jinja2) e endpoints de API RESTful assíncrona.
 """
 
 import os
+from typing import Optional, List, Dict, Any
 from contextlib import asynccontextmanager
 from pathlib import Path
 from datetime import datetime
@@ -22,7 +23,7 @@ from app.database import (
     get_latency_chart_data, get_incidents, resolve_incident,
     get_setting, set_setting, simulate_bank_state
 )
-from app.monitor import monitor_engine
+from app.monitor import monitor_engine, run_decoupled_probe_if_needed
 from app.models import (
     SystemSummaryModel, BankStatusModel, LatencyChartResponse,
     PingRequest, PingResponse, UpdateSettingsRequest
@@ -57,8 +58,11 @@ templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 # ============================================================================
 
 @app.get("/", response_class=HTMLResponse)
-async def index_page(request: Request):
-    """Página principal do Dashboard."""
+async def index_page(request: Request, background_tasks: BackgroundTasks):
+    """Página principal do Dashboard (com checagem desacoplada assíncrona)."""
+    # Aciona sondagem assíncrona se o TTL expirou, sem travar o carregamento do usuário
+    background_tasks.add_task(run_decoupled_probe_if_needed)
+    
     summary = get_system_summary()
     banks = get_latest_bank_status()
     return templates.TemplateResponse(
@@ -94,15 +98,16 @@ async def bank_detail_page(request: Request, bank_id: str):
     )
 
 @app.get("/incidents", response_class=HTMLResponse)
-async def incidents_page(request: Request):
+async def incidents_page(request: Request, status: Optional[str] = None):
     """Página de gestão e histórico de incidentes."""
-    incidents = get_incidents()
+    incidents = get_incidents(status_filter=status)
     return templates.TemplateResponse(
         request=request,
         name="incidents.html",
         context={
             "active_page": "incidents",
-            "incidents": incidents
+            "incidents": incidents,
+            "status_filter": status or "all"
         }
     )
 
@@ -133,14 +138,37 @@ async def settings_page(request: Request):
 # ============================================================================
 
 @app.get("/api/summary", response_model=SystemSummaryModel)
-async def api_summary():
-    """Retorna métricas executivas consolidadas (KPIs)."""
+async def api_summary(background_tasks: BackgroundTasks):
+    """Retorna métricas executivas consolidadas (KPIs) e aciona checagem desacoplada se o TTL expirou."""
+    background_tasks.add_task(run_decoupled_probe_if_needed)
     return get_system_summary()
 
 @app.get("/api/status")
-async def api_status():
-    """Retorna o status em tempo real de todos os 5 bancos e seus serviços."""
+async def api_status(background_tasks: BackgroundTasks):
+    """Retorna o status em tempo real de todos os 5 bancos e seus serviços com checagem desacoplada."""
+    background_tasks.add_task(run_decoupled_probe_if_needed)
     return get_latest_bank_status()
+
+@app.get("/api/cron/check")
+async def api_cron_check(token: Optional[str] = None):
+    """
+    Endpoint seguro para acionamento por Cron Jobs externos (ex: GitHub Actions, cron-job.org).
+    Executa um ciclo completo de sondagem assíncrona nos 5 bancos.
+    """
+    if token != settings.CRON_SECRET_TOKEN:
+        raise HTTPException(status_code=403, detail="Token de autorização do cron inválido ou ausente.")
+    
+    start_time = datetime.now()
+    probed = await run_decoupled_probe_if_needed(force=True)
+    duration_ms = round((datetime.now() - start_time).total_seconds() * 1000, 1)
+    
+    return {
+        "status": "success",
+        "message": "Ciclo de sondagem desacoplado executado com sucesso" if probed else "Sondagem em cache ou já em andamento",
+        "probed": probed,
+        "duration_ms": duration_ms,
+        "timestamp": get_brasilia_now().strftime("%Y-%m-%d %H:%M:%S")
+    }
 
 @app.get("/api/banks/{bank_id}")
 async def api_bank_detail(bank_id: str):

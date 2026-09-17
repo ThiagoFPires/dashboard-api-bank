@@ -44,6 +44,12 @@ class Settings:
     
     # Modo de operação: 'hybrid', 'simulation_only', ou 'live_only'
     MONITOR_MODE: str = os.getenv("MONITOR_MODE", "hybrid")
+    
+    # Arquitetura Desacoplada (Serverless Vercel)
+    # Tempo mínimo entre checagens externas para proteção de IP e rate limit (em segundos)
+    CACHE_TTL_SECONDS: int = int(os.getenv("CACHE_TTL_SECONDS", 60))
+    # Chave de segurança para acionar cron externo
+    CRON_SECRET_TOKEN: str = os.getenv("CRON_SECRET_TOKEN", "bank_monitor_cron_secret_2026")
 
 settings = Settings()
 
