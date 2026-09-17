@@ -345,7 +345,7 @@ function setupAutoRefresh() {
             loadDashboardData();
             loadChartData();
         }
-    }, 15000);
+    }, 60000);
 }
 
 function toggleAutoRefresh() {
@@ -354,7 +354,7 @@ function toggleAutoRefresh() {
     if (toggleBtn) {
         if (isAutoRefreshActive) {
             toggleBtn.className = "px-3 py-1.5 rounded text-xs font-semibold border bg-zinc-800 text-white border-zinc-600 transition-all flex items-center gap-2";
-            showToast("Atualização automática ativada (15s)", "info");
+            showToast("Atualização automática ativada (60s)", "info");
         } else {
             toggleBtn.className = "px-3 py-1.5 rounded text-xs font-semibold border bg-zinc-950 text-zinc-500 border-zinc-800 transition-all flex items-center gap-2";
             showToast("Atualização automática pausada", "warning");

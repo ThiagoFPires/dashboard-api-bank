@@ -33,7 +33,7 @@ class Settings:
     TIMEZONE: str = "America/Sao_Paulo"
     
     # Intervalo de checagem automática em segundos
-    CHECK_INTERVAL_SECONDS: int = 30
+    CHECK_INTERVAL_SECONDS: int = 60
     
     # Limiares de latência em milissegundos
     LATENCY_NORMAL_THRESHOLD_MS: int = 600
