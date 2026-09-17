@@ -421,3 +421,12 @@ html.light ::-webkit-scrollbar-thumb {
 html.light ::-webkit-scrollbar-thumb:hover {
     background: #94a3b8;
 }
+
+/* Cursor e toque para Pan e Zoom no Gráfico de Latência */
+#latencyChart {
+    cursor: grab;
+    touch-action: pan-y;
+}
+#latencyChart:active {
+    cursor: grabbing;
+}

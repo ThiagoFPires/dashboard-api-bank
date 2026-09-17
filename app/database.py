@@ -382,7 +382,7 @@ def get_system_summary() -> Dict[str, Any]:
         "last_checked_at": get_brasilia_now().strftime("%H:%M:%S")
     }
 
-def get_latency_chart_data(limit_per_bank: int = 20) -> Dict[str, Any]:
+def get_latency_chart_data(limit_per_bank: int = 60) -> Dict[str, Any]:
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -397,22 +397,26 @@ def get_latency_chart_data(limit_per_bank: int = 20) -> Dict[str, Any]:
     time_rows = list(reversed(cursor.fetchall()))
     labels = [r["time_label"] for r in time_rows]
     
+    if not labels:
+        conn.close()
+        return {"labels": [], "datasets": []}
+
+    placeholders = ",".join(["?"] * len(labels))
+    cursor.execute(f"""
+        SELECT 
+            bank_id,
+            strftime('%H:%M', timestamp) as time_label,
+            ROUND(AVG(latency_ms), 1) as avg_lat
+        FROM service_checks
+        WHERE strftime('%H:%M', timestamp) IN ({placeholders})
+        GROUP BY bank_id, time_label
+    """, labels)
+    
+    data_map = {(r["bank_id"], r["time_label"]): r["avg_lat"] for r in cursor.fetchall()}
+    
     for bank in BANKS_CATALOG:
         b_id = bank["id"]
-        points = []
-        
-        for t_label in labels:
-            cursor.execute("""
-                SELECT AVG(latency_ms) as avg_lat
-                FROM service_checks
-                WHERE bank_id = ? AND strftime('%H:%M', timestamp) = ?
-            """, (b_id, t_label))
-            row = cursor.fetchone()
-            if row and row["avg_lat"] is not None:
-                points.append(round(row["avg_lat"], 1))
-            else:
-                points.append(None)
-                
+        points = [data_map.get((b_id, t)) for t in labels]
         datasets.append({
             "bank_id": b_id,
             "label": bank["short_name"],

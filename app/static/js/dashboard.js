@@ -93,6 +93,14 @@ function updateChartTheme() {
     latencyChart.update();
 }
 
+// Resetar Pan e Zoom do Gráfico
+function resetChartZoom() {
+    if (latencyChart && typeof latencyChart.resetZoom === "function") {
+        latencyChart.resetZoom();
+        showToast("Zoom do gráfico redefinido", "info");
+    }
+}
+
 // Inicialização do Gráfico Chart.js
 function initChart() {
     const ctx = document.getElementById("latencyChart");
@@ -118,6 +126,26 @@ function initChart() {
             plugins: {
                 legend: {
                     display: false // Usamos os botões interativos customizados acima do gráfico
+                },
+                zoom: {
+                    pan: {
+                        enabled: true,
+                        mode: 'x',
+                        modifierKey: null,
+                    },
+                    zoom: {
+                        wheel: {
+                            enabled: true,
+                            speed: 0.1,
+                        },
+                        pinch: {
+                            enabled: true,
+                        },
+                        mode: 'x',
+                    },
+                    limits: {
+                        x: { min: 'original', max: 'original' }
+                    }
                 },
                 tooltip: {
                     backgroundColor: isDark ? "#09090b" : "#ffffff",
