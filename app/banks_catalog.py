@@ -17,7 +17,7 @@ BANKS_CATALOG = [
         "badge_color": "bg-zinc-800 text-zinc-100 border-zinc-700",
         "icon": "building-2",
         "tagline": "Maior banco privado do Brasil",
-        "developer_portal": "https://developer.itau.com.br",
+        "developer_portal": "https://devportal.itau.com.br/baas/#/",
         "services": [
             {
                 "id": "itau-pix",
