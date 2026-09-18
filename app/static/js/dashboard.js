@@ -94,8 +94,30 @@ function updateChartTheme() {
 }
 
 // Controle de Paginação e Arrastar no Histórico do Gráfico
-const DEFAULT_VISIBLE_POINTS = 20;
+const DEFAULT_VISIBLE_POINTS = 25;
 let userHasInteractedWithChart = false;
+let currentChartPeriod = "24h";
+
+// Alternar Período do Histórico (1h, 6h, 24h)
+function setChartPeriod(period) {
+    if (currentChartPeriod === period) return;
+    currentChartPeriod = period;
+
+    const buttons = document.querySelectorAll(".chart-period-btn");
+    buttons.forEach(btn => {
+        if (btn.getAttribute("data-period") === period) {
+            btn.className = "chart-period-btn px-2.5 py-1 rounded transition-all bg-white text-black font-bold shadow-sm";
+        } else {
+            btn.className = "chart-period-btn px-2.5 py-1 rounded transition-all text-zinc-400 hover:text-white";
+        }
+    });
+
+    userHasInteractedWithChart = false;
+    loadChartData();
+
+    const periodLabels = { "1h": "1 hora (minuto a minuto)", "6h": "6 horas", "24h": "24 horas (dia completo)" };
+    showToast(`Histórico ajustado para: ${periodLabels[period] || period}`, "info");
+}
 
 // Resetar Pan e Zoom do Gráfico para os dados mais recentes
 function resetChartZoom() {
@@ -105,8 +127,13 @@ function resetChartZoom() {
     }
     userHasInteractedWithChart = false;
     const total = latencyChart.data.labels ? latencyChart.data.labels.length : 0;
-    if (total > DEFAULT_VISIBLE_POINTS) {
-        latencyChart.options.scales.x.min = total - DEFAULT_VISIBLE_POINTS;
+    let windowSize = DEFAULT_VISIBLE_POINTS;
+    if (currentChartPeriod === "1h") windowSize = 30;
+    else if (currentChartPeriod === "6h") windowSize = 35;
+    else if (currentChartPeriod === "24h") windowSize = 36;
+
+    if (total > windowSize) {
+        latencyChart.options.scales.x.min = total - windowSize;
         latencyChart.options.scales.x.max = total - 1;
     } else {
         latencyChart.options.scales.x.min = 0;
@@ -328,7 +355,7 @@ function initChart() {
 async function loadChartData() {
     if (!latencyChart) return;
     try {
-        const response = await fetch("/api/chart-data");
+        const response = await fetch(`/api/chart-data?period=${currentChartPeriod}`);
         if (!response.ok) return;
         const data = await response.json();
 
@@ -342,7 +369,7 @@ async function loadChartData() {
                 borderColor: color,
                 backgroundColor: color,
                 borderWidth: 2.5,
-                pointRadius: 3,
+                pointRadius: currentChartPeriod === "24h" ? 2 : 3,
                 pointHoverRadius: 6,
                 pointBackgroundColor: color,
                 tension: 0.3,
@@ -353,17 +380,21 @@ async function loadChartData() {
 
         const total = data.labels.length;
         if (total > 0) {
-            // Se o usuário não está navegando no passado, foca nos últimos 20 pontos
+            let windowSize = DEFAULT_VISIBLE_POINTS;
+            if (currentChartPeriod === "1h") windowSize = 30;
+            else if (currentChartPeriod === "6h") windowSize = 35;
+            else if (currentChartPeriod === "24h") windowSize = 36; // ~3 horas visíveis inicialmente
+
             if (!userHasInteractedWithChart) {
-                if (total > DEFAULT_VISIBLE_POINTS) {
-                    latencyChart.options.scales.x.min = total - DEFAULT_VISIBLE_POINTS;
+                if (total > windowSize) {
+                    latencyChart.options.scales.x.min = total - windowSize;
                     latencyChart.options.scales.x.max = total - 1;
                 } else {
                     latencyChart.options.scales.x.min = 0;
                     latencyChart.options.scales.x.max = total - 1;
                 }
             }
-            // Atualiza limites de zoom para cobrir todo o histórico
+            // Atualiza limites de zoom para cobrir todo o histórico do período selecionado
             if (latencyChart.options.plugins && latencyChart.options.plugins.zoom && latencyChart.options.plugins.zoom.limits) {
                 latencyChart.options.plugins.zoom.limits.x = {
                     min: 0,
