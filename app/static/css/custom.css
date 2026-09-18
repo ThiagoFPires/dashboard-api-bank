@@ -434,3 +434,23 @@ html.light ::-webkit-scrollbar-thumb:hover {
     cursor: grabbing;
 }
 
+/* Botões de filtro do gráfico no tema claro */
+html.light .chart-filter-btn.bg-zinc-950 {
+    background-color: #ffffff !important;
+    border-color: #e2e8f0 !important;
+    color: #475569 !important;
+}
+html.light .chart-filter-btn.bg-zinc-950:hover {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+html.light .chart-filter-btn.bg-zinc-800 {
+    background-color: #f1f5f9 !important;
+    color: #0f172a !important;
+}
+html.light .chart-filter-btn.bg-white.text-black {
+    background-color: #0f172a !important;
+    color: #ffffff !important;
+    border-color: #0f172a !important;
+}
+

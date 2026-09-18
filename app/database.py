@@ -87,36 +87,34 @@ def seed_initial_history(conn: sqlite3.Connection):
     now = get_brasilia_now()
     
     bank_latency_profile = {
-        "itau": (80, 210),
-        "sicredi": (110, 240),
-        "sicoob": (95, 220),
-        "bb": (70, 190),
-        "bradesco": (90, 230)
+        "itau": (85, 150),
+        "sicredi": (110, 180),
+        "sicoob": (95, 165),
+        "bb": (70, 135),
+        "bradesco": (90, 160)
     }
     
-    # Criar 30 pontos recentes por banco para a barra de calor
-    for i in range(30, -1, -1):
-        check_time = (now - timedelta(minutes=i * 5)).strftime("%Y-%m-%d %H:%M:%S")
+    # Criar 70 pontos recentes por banco (espaçados a cada 2 minutos) para curva contínua e rica
+    for i in range(70, -1, -1):
+        check_time = (now - timedelta(minutes=i * 2)).strftime("%Y-%m-%d %H:%M:%S")
         
         for bank in BANKS_CATALOG:
             b_id = bank["id"]
-            min_l, max_l = bank_latency_profile.get(b_id, (100, 250))
+            min_l, max_l = bank_latency_profile.get(b_id, (90, 160))
             
             for svc in bank["services"]:
                 s_id = svc["id"]
                 
-                # Simular padrão de calor variado para visualização imediata:
-                # Na posição i=8 ou 9, simular oscilação (amarelo) em alguns bancos
-                # Na posição i=18 ou 19, simular queda breve (vermelho)
-                if (b_id in ["itau", "sicredi"] and i in [6, 7]) or (b_id == "bradesco" and i in [2, 3]):
-                    # Amarelo: Oscilando
-                    latency = random.uniform(850, 1600)
+                # Simular padrão de calor variado com variações de latência realistas:
+                if (b_id in ["itau", "sicredi"] and i in [14, 15]) or (b_id == "bradesco" and i in [6, 7]):
+                    # Amarelo: Oscilando com leve pico de latência
+                    latency = random.uniform(270, 340)
                     status = "degraded"
                     code = 200
                     err = "Tempo de resposta acima do SLA"
-                elif (b_id == "sicoob" and i in [14, 15]) or (b_id == "bb" and i == 20):
-                    # Vermelho: Caiu
-                    latency = 2800.0
+                elif (b_id == "sicoob" and i in [32, 33]) or (b_id == "bb" and i == 45):
+                    # Vermelho: Falha pontual
+                    latency = random.uniform(360, 420)
                     status = "outage"
                     code = 503
                     err = "503 Service Unavailable (Falha de Conexão)"
@@ -390,10 +388,11 @@ def get_latency_chart_data(limit_per_bank: int = 100) -> Dict[str, Any]:
     cutoff = (get_brasilia_now() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
     
     cursor.execute("""
-        SELECT DISTINCT strftime('%H:%M', timestamp) as time_label
+        SELECT strftime('%H:%M', timestamp) as time_label, MAX(timestamp) as max_ts
         FROM service_checks
         WHERE timestamp >= ?
-        ORDER BY timestamp DESC
+        GROUP BY time_label
+        ORDER BY max_ts DESC
         LIMIT ?
     """, (cutoff, limit_per_bank))
     time_rows = list(reversed(cursor.fetchall()))

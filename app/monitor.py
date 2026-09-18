@@ -128,12 +128,12 @@ class BankMonitorEngine:
         dice = random.random()
         if dice > 0.975:
             # Instabilidade temporária
-            latency = round(random.uniform(750, 1600), 1)
+            latency = round(random.uniform(270, 340), 1)
             status = "degraded"
             code = 200
             msg = "Latência ligeiramente acima do limite de SLA"
         elif dice > 0.998:
-            latency = 2500.0
+            latency = round(random.uniform(360, 420), 1)
             status = "outage"
             code = 503
             msg = "503 Service Unavailable (contingência)"

@@ -70,9 +70,9 @@ function toggleTheme() {
 
 function updateChartTheme() {
     if (!latencyChart) return;
-    const isDark = document.documentElement.classList.contains("dark");
-    const gridColor = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
-    const textColor = isDark ? "#a1a1aa" : "#64748b";
+    const isDark = document.documentElement.classList.contains("dark") || !document.documentElement.classList.contains("light");
+    const gridColor = isDark ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.05)";
+    const textColor = isDark ? "#71717a" : "#64748b";
 
     if (latencyChart.options.scales.x) {
         latencyChart.options.scales.x.grid.color = gridColor;
@@ -84,17 +84,19 @@ function updateChartTheme() {
     }
 
     if (latencyChart.options.plugins && latencyChart.options.plugins.tooltip) {
-        latencyChart.options.plugins.tooltip.backgroundColor = isDark ? "#09090b" : "#ffffff";
-        latencyChart.options.plugins.tooltip.titleColor = isDark ? "#ffffff" : "#0f172a";
-        latencyChart.options.plugins.tooltip.bodyColor = isDark ? "#d4d4d8" : "#334155";
-        latencyChart.options.plugins.tooltip.borderColor = isDark ? "#27272a" : "#e2e8f0";
+        latencyChart.options.plugins.tooltip.backgroundColor = isDark ? "rgba(9, 9, 11, 0.94)" : "rgba(255, 255, 255, 0.96)";
+        latencyChart.options.plugins.tooltip.titleColor = isDark ? "#ffffff" : "#09090b";
+        latencyChart.options.plugins.tooltip.bodyColor = isDark ? "#d4d4d8" : "#27272a";
+        latencyChart.options.plugins.tooltip.borderColor = isDark ? "#27272a" : "#e4e4e7";
     }
 
     latencyChart.update();
 }
 
 // Controle de Paginação e Arrastar no Histórico do Gráfico
-const DEFAULT_VISIBLE_POINTS = 20;
+function getDefaultVisiblePoints() {
+    return window.innerWidth < 640 ? 18 : 30;
+}
 let userHasInteractedWithChart = false;
 
 // Resetar Pan e Zoom do Gráfico para os dados mais recentes
@@ -105,8 +107,9 @@ function resetChartZoom() {
     }
     userHasInteractedWithChart = false;
     const total = latencyChart.data.labels ? latencyChart.data.labels.length : 0;
-    if (total > DEFAULT_VISIBLE_POINTS) {
-        latencyChart.options.scales.x.min = total - DEFAULT_VISIBLE_POINTS;
+    const defaultVisible = getDefaultVisiblePoints();
+    if (total > defaultVisible) {
+        latencyChart.options.scales.x.min = total - defaultVisible;
         latencyChart.options.scales.x.max = total - 1;
     } else {
         latencyChart.options.scales.x.min = 0;
@@ -245,9 +248,9 @@ function initChart() {
     const ctx = document.getElementById("latencyChart");
     if (!ctx) return;
 
-    const isDark = document.documentElement.classList.contains("dark");
-    const gridColor = isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(0, 0, 0, 0.06)";
-    const textColor = isDark ? "#a1a1aa" : "#64748b";
+    const isDark = document.documentElement.classList.contains("dark") || !document.documentElement.classList.contains("light");
+    const gridColor = isDark ? "rgba(255, 255, 255, 0.04)" : "rgba(0, 0, 0, 0.05)";
+    const textColor = isDark ? "#71717a" : "#64748b";
 
     latencyChart = new Chart(ctx, {
         type: "line",
@@ -258,6 +261,9 @@ function initChart() {
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            animation: {
+                duration: 350
+            },
             interaction: {
                 mode: "index",
                 intersect: false,
@@ -288,33 +294,56 @@ function initChart() {
                     }
                 },
                 tooltip: {
-                    backgroundColor: isDark ? "#09090b" : "#ffffff",
-                    titleColor: isDark ? "#ffffff" : "#0f172a",
-                    bodyColor: isDark ? "#d4d4d8" : "#334155",
-                    borderColor: isDark ? "#27272a" : "#e2e8f0",
+                    backgroundColor: isDark ? "rgba(9, 9, 11, 0.94)" : "rgba(255, 255, 255, 0.96)",
+                    titleColor: isDark ? "#ffffff" : "#09090b",
+                    bodyColor: isDark ? "#d4d4d8" : "#27272a",
+                    borderColor: isDark ? "#27272a" : "#e4e4e7",
                     borderWidth: 1,
                     padding: 12,
-                    cornerRadius: 6,
+                    boxPadding: 6,
+                    usePointStyle: true,
+                    cornerRadius: 8,
+                    titleFont: { family: "JetBrains Mono, monospace", size: 12, weight: "bold" },
+                    bodyFont: { family: "JetBrains Mono, monospace", size: 12 },
                     callbacks: {
                         label: function(context) {
-                            return ` ${context.dataset.label}: ${context.parsed.y} ms`;
+                            const label = context.dataset.label || '';
+                            const val = context.parsed.y;
+                            return ` ${label}: ${val !== null && val !== undefined ? val + ' ms' : 'N/D'}`;
                         }
                     }
                 }
             },
             scales: {
                 x: {
-                    grid: { color: gridColor },
-                    ticks: { color: textColor, font: { size: 11, family: "JetBrains Mono, monospace" } }
-                },
-                y: {
-                    grid: { color: gridColor },
+                    grid: { 
+                        color: gridColor,
+                        drawBorder: false
+                    },
                     ticks: { 
                         color: textColor, 
                         font: { size: 11, family: "JetBrains Mono, monospace" },
-                        callback: function(value) { return value + " ms"; }
+                        maxRotation: 0,
+                        minRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 8,
+                        padding: 8
+                    }
+                },
+                y: {
+                    grid: { 
+                        color: gridColor,
+                        drawBorder: false
                     },
-                    suggestedMin: 0
+                    ticks: { 
+                        color: textColor, 
+                        font: { size: 11, family: "JetBrains Mono, monospace" },
+                        callback: function(value) { return value + " ms"; },
+                        maxTicksLimit: 6,
+                        padding: 8
+                    },
+                    suggestedMin: 0,
+                    suggestedMax: 300
                 }
             }
         }
@@ -340,23 +369,27 @@ async function loadChartData() {
                 label: ds.label,
                 data: ds.data,
                 borderColor: color,
-                backgroundColor: color,
-                borderWidth: 2.5,
-                pointRadius: 3,
-                pointHoverRadius: 6,
-                pointBackgroundColor: color,
-                tension: 0.3,
+                backgroundColor: color + "14",
+                borderWidth: 2,
+                pointRadius: 0,
+                pointHoverRadius: 5,
+                pointHoverBackgroundColor: color,
+                pointHoverBorderColor: "#ffffff",
+                pointHoverBorderWidth: 2,
+                pointHitRadius: 10,
+                tension: 0.35,
                 fill: false,
                 hidden: (currentChartFilter !== "all" && ds.bank_id !== currentChartFilter)
             };
         });
 
         const total = data.labels.length;
+        const defaultVisible = getDefaultVisiblePoints();
         if (total > 0) {
-            // Se o usuário não está navegando no passado, foca nos últimos 20 pontos
+            // Se o usuário não está navegando no passado, foca no final do histórico recente
             if (!userHasInteractedWithChart) {
-                if (total > DEFAULT_VISIBLE_POINTS) {
-                    latencyChart.options.scales.x.min = total - DEFAULT_VISIBLE_POINTS;
+                if (total > defaultVisible) {
+                    latencyChart.options.scales.x.min = total - defaultVisible;
                     latencyChart.options.scales.x.max = total - 1;
                 } else {
                     latencyChart.options.scales.x.min = 0;
