@@ -130,6 +130,22 @@ def seed_initial_history(conn: sqlite3.Connection):
                     (bank_id, service_id, timestamp, status_code, latency_ms, status, error_message, is_simulated)
                     VALUES (?, ?, ?, ?, ?, ?, ?, 1)
                 """, (b_id, s_id, check_time, code, round(latency, 1), status, err))
+                
+    # Criar histórico complementar a cada 20 minutos para cobrir as 24 horas anteriores
+    for h in range(3, 25):
+        for m in (0, 20, 40):
+            older_time = (now - timedelta(hours=h, minutes=m)).strftime("%Y-%m-%d %H:%M:%S")
+            for bank in BANKS_CATALOG:
+                b_id = bank["id"]
+                min_l, max_l = bank_latency_profile.get(b_id, (90, 160))
+                for svc in bank["services"]:
+                    s_id = svc["id"]
+                    lat = random.uniform(min_l, max_l)
+                    cursor.execute("""
+                        INSERT INTO service_checks 
+                        (bank_id, service_id, timestamp, status_code, latency_ms, status, error_message, is_simulated)
+                        VALUES (?, ?, ?, 200, ?, 'operational', NULL, 1)
+                    """, (b_id, s_id, older_time, round(lat, 1)))
     
     cursor.execute("""
         INSERT INTO incidents (bank_id, service_id, title, description, severity, status, started_at, resolved_at)
@@ -380,41 +396,59 @@ def get_system_summary() -> Dict[str, Any]:
         "last_checked_at": get_brasilia_now().strftime("%H:%M:%S")
     }
 
-def get_latency_chart_data(limit_per_bank: int = 100) -> Dict[str, Any]:
+def get_latency_chart_data(period: str = "24h") -> Dict[str, Any]:
+    """
+    Retorna séries temporais de latência dos bancos agrupadas de acordo com o período solicitado:
+      - '1h': última 1 hora com agrupamento minuto a minuto (até 60 pontos)
+      - '6h': últimas 6 horas com buckets de 5 minutos (até 72 pontos)
+      - '24h': últimas 24 horas com buckets de 15 minutos (até 96 pontos)
+    """
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    datasets = []
-    cutoff = (get_brasilia_now() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
-    
-    cursor.execute("""
-        SELECT strftime('%H:%M', timestamp) as time_label, MAX(timestamp) as max_ts
+    now = get_brasilia_now()
+    if period == "1h":
+        cutoff = (now - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
+        bucket_expr = "strftime('%H:%M', timestamp)"
+        limit_points = 60
+    elif period == "6h":
+        cutoff = (now - timedelta(hours=6)).strftime("%Y-%m-%d %H:%M:%S")
+        bucket_expr = "strftime('%H:', timestamp) || printf('%02d', (CAST(strftime('%M', timestamp) AS INTEGER) / 5) * 5)"
+        limit_points = 72
+    else:  # '24h' padrão
+        period = "24h"
+        cutoff = (now - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+        bucket_expr = "strftime('%H:', timestamp) || printf('%02d', (CAST(strftime('%M', timestamp) AS INTEGER) / 15) * 15)"
+        limit_points = 96
+
+    cursor.execute(f"""
+        SELECT {bucket_expr} as time_label, MAX(timestamp) as max_ts
         FROM service_checks
         WHERE timestamp >= ?
         GROUP BY time_label
         ORDER BY max_ts DESC
         LIMIT ?
-    """, (cutoff, limit_per_bank))
+    """, (cutoff, limit_points))
     time_rows = list(reversed(cursor.fetchall()))
     labels = [r["time_label"] for r in time_rows]
     
     if not labels:
         conn.close()
-        return {"labels": [], "datasets": []}
+        return {"labels": [], "datasets": [], "period": period}
 
-    placeholders = ",".join(["?"] * len(labels))
     cursor.execute(f"""
         SELECT 
             bank_id,
-            strftime('%H:%M', timestamp) as time_label,
+            {bucket_expr} as time_label,
             ROUND(AVG(latency_ms), 1) as avg_lat
         FROM service_checks
-        WHERE timestamp >= ? AND strftime('%H:%M', timestamp) IN ({placeholders})
+        WHERE timestamp >= ?
         GROUP BY bank_id, time_label
-    """, [cutoff] + labels)
+    """, (cutoff,))
     
     data_map = {(r["bank_id"], r["time_label"]): r["avg_lat"] for r in cursor.fetchall()}
     
+    datasets = []
     for bank in BANKS_CATALOG:
         b_id = bank["id"]
         points = [data_map.get((b_id, t)) for t in labels]
@@ -428,7 +462,8 @@ def get_latency_chart_data(limit_per_bank: int = 100) -> Dict[str, Any]:
     conn.close()
     return {
         "labels": labels,
-        "datasets": datasets
+        "datasets": datasets,
+        "period": period
     }
 
 def get_incidents(status_filter: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:

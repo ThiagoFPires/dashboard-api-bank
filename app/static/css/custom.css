@@ -454,3 +454,21 @@ html.light .chart-filter-btn.bg-white.text-black {
     border-color: #0f172a !important;
 }
 
+/* Seletor de período (1h, 6h, 24h) no tema claro */
+html.light #chartPeriodGroup {
+    background-color: #f1f5f9 !important;
+    border-color: #e2e8f0 !important;
+}
+html.light .chart-period-btn {
+    color: #64748b !important;
+}
+html.light .chart-period-btn:hover {
+    color: #0f172a !important;
+}
+html.light .chart-period-btn.active-period,
+html.light .chart-period-btn.bg-zinc-800 {
+    background-color: #ffffff !important;
+    color: #0f172a !important;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.08) !important;
+}
+

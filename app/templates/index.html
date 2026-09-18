@@ -201,9 +201,9 @@
                 <div>
                     <div class="flex items-center gap-2">
                         <h2 class="text-sm font-bold text-white uppercase tracking-wider">Histórico Comparativo de Latência</h2>
-                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <span id="chartLiveBadge" class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[10px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                             <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                            Tempo Real (24h)
+                            <span id="chartPeriodLabel">Tempo Real (24h)</span>
                         </span>
                     </div>
                     <p class="text-xs text-zinc-400 mt-0.5">Tempo de resposta em milissegundos (ms) aferido para cada banco com suas cores oficiais</p>
@@ -238,20 +238,33 @@
             </div>
         </div>
 
-        <!-- Barra de Navegação no Histórico: Instruções e Controles de Navegação -->
+        <!-- Barra de Navegação no Histórico: Filtro de Período, Instruções e Controles -->
         <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3 pt-2.5 border-t border-zinc-800/80">
-            <div class="flex items-center gap-2 flex-wrap text-xs text-zinc-400">
+            <div class="flex items-center gap-2.5 flex-wrap text-xs">
+                <!-- Seletor de Período: 1h, 6h, 24h -->
+                <div class="inline-flex items-center p-0.5 rounded-lg bg-zinc-950 border border-zinc-800 text-xs font-mono font-medium" id="chartPeriodGroup">
+                    <button type="button" onclick="setChartPeriod('1h')" id="btnPeriod1h" class="chart-period-btn px-2.5 py-1 rounded text-zinc-400 hover:text-white transition-all text-xs font-mono" data-period="1h" title="Visualizar última 1 hora">
+                        1h
+                    </button>
+                    <button type="button" onclick="setChartPeriod('6h')" id="btnPeriod6h" class="chart-period-btn px-2.5 py-1 rounded text-zinc-400 hover:text-white transition-all text-xs font-mono" data-period="6h" title="Visualizar últimas 6 horas">
+                        6h
+                    </button>
+                    <button type="button" onclick="setChartPeriod('24h')" id="btnPeriod24h" class="chart-period-btn active-period px-2.5 py-1 rounded bg-zinc-800 text-white font-semibold shadow-sm transition-all text-xs font-mono" data-period="24h" title="Visualizar últimas 24 horas">
+                        24h
+                    </button>
+                </div>
+
                 <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-950 text-zinc-300 border border-zinc-800 text-[11px] font-mono">
                     <svg class="w-3.5 h-3.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/>
                     </svg>
-                    <span><strong>Arrastar:</strong> Clique e deslize para navegar no histórico</span>
+                    <span><strong>Arrastar:</strong> Navegue no tempo</span>
                 </span>
-                <span class="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-950 text-zinc-300 border border-zinc-800 text-[11px] font-mono">
+                <span class="hidden md:inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-zinc-950 text-zinc-300 border border-zinc-800 text-[11px] font-mono">
                     <svg class="w-3.5 h-3.5 text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"/>
                     </svg>
-                    <span><strong>Zoom:</strong> Roda do mouse</span>
+                    <span><strong>Zoom:</strong> Roda</span>
                 </span>
             </div>
 

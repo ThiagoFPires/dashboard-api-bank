@@ -28,6 +28,7 @@ const OFFICIAL_BANK_COLORS = {
 };
 
 let currentChartFilter = "all";
+let currentChartPeriod = "24h";
 
 // Controle de Tema (Claro / Escuro)
 function initTheme() {
@@ -99,6 +100,33 @@ function getDefaultVisiblePoints() {
 }
 let userHasInteractedWithChart = false;
 
+// Seleção de Período do Histórico (1h, 6h, 24h)
+function setChartPeriod(period) {
+    if (!['1h', '6h', '24h'].includes(period)) return;
+    currentChartPeriod = period;
+    
+    // Atualiza estado visual dos botões
+    const buttons = document.querySelectorAll(".chart-period-btn");
+    buttons.forEach(btn => {
+        if (btn.getAttribute("data-period") === period) {
+            btn.classList.add("active-period", "bg-zinc-800", "text-white", "font-semibold", "shadow-sm");
+            btn.classList.remove("text-zinc-400");
+        } else {
+            btn.classList.remove("active-period", "bg-zinc-800", "text-white", "font-semibold", "shadow-sm");
+            btn.classList.add("text-zinc-400");
+        }
+    });
+
+    const badgeLabel = document.getElementById("chartPeriodLabel");
+    if (badgeLabel) {
+        badgeLabel.textContent = `Tempo Real (${period})`;
+    }
+
+    userHasInteractedWithChart = false;
+    loadChartData();
+    showToast(`Histórico filtrado para ${period === '1h' ? 'última 1 hora' : period === '6h' ? 'últimas 6 horas' : 'últimas 24 horas'}`, "info");
+}
+
 // Resetar Pan e Zoom do Gráfico para os dados mais recentes
 function resetChartZoom() {
     if (!latencyChart) return;
@@ -108,12 +136,12 @@ function resetChartZoom() {
     userHasInteractedWithChart = false;
     const total = latencyChart.data.labels ? latencyChart.data.labels.length : 0;
     const defaultVisible = getDefaultVisiblePoints();
-    if (total > defaultVisible) {
-        latencyChart.options.scales.x.min = total - defaultVisible;
-        latencyChart.options.scales.x.max = total - 1;
-    } else {
+    if (currentChartPeriod === "1h" || total <= defaultVisible) {
         latencyChart.options.scales.x.min = 0;
         latencyChart.options.scales.x.max = Math.max(0, total - 1);
+    } else {
+        latencyChart.options.scales.x.min = total - defaultVisible;
+        latencyChart.options.scales.x.max = total - 1;
     }
     latencyChart.update();
     showToast("Visão do gráfico redefinida para os pontos mais recentes", "info");
@@ -357,7 +385,7 @@ function initChart() {
 async function loadChartData() {
     if (!latencyChart) return;
     try {
-        const response = await fetch("/api/chart-data");
+        const response = await fetch(`/api/chart-data?period=${currentChartPeriod}`);
         if (!response.ok) return;
         const data = await response.json();
 
@@ -378,6 +406,7 @@ async function loadChartData() {
                 pointHoverBorderWidth: 2,
                 pointHitRadius: 10,
                 tension: 0.35,
+                spanGaps: true,
                 fill: false,
                 hidden: (currentChartFilter !== "all" && ds.bank_id !== currentChartFilter)
             };
@@ -386,17 +415,17 @@ async function loadChartData() {
         const total = data.labels.length;
         const defaultVisible = getDefaultVisiblePoints();
         if (total > 0) {
-            // Se o usuário não está navegando no passado, foca no final do histórico recente
+            // Se o usuário não está navegando manualmente no passado, posiciona a janela
             if (!userHasInteractedWithChart) {
-                if (total > defaultVisible) {
-                    latencyChart.options.scales.x.min = total - defaultVisible;
+                if (currentChartPeriod === "1h" || total <= defaultVisible) {
+                    latencyChart.options.scales.x.min = 0;
                     latencyChart.options.scales.x.max = total - 1;
                 } else {
-                    latencyChart.options.scales.x.min = 0;
+                    latencyChart.options.scales.x.min = total - defaultVisible;
                     latencyChart.options.scales.x.max = total - 1;
                 }
             }
-            // Atualiza limites de zoom para cobrir todo o histórico
+            // Atualiza limites de zoom para cobrir todo o histórico do período selecionado
             if (latencyChart.options.plugins && latencyChart.options.plugins.zoom && latencyChart.options.plugins.zoom.limits) {
                 latencyChart.options.plugins.zoom.limits.x = {
                     min: 0,
