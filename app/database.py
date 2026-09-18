@@ -382,18 +382,20 @@ def get_system_summary() -> Dict[str, Any]:
         "last_checked_at": get_brasilia_now().strftime("%H:%M:%S")
     }
 
-def get_latency_chart_data(limit_per_bank: int = 60) -> Dict[str, Any]:
+def get_latency_chart_data(limit_per_bank: int = 100) -> Dict[str, Any]:
     conn = get_db_connection()
     cursor = conn.cursor()
     
     datasets = []
+    cutoff = (get_brasilia_now() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
     
     cursor.execute("""
         SELECT DISTINCT strftime('%H:%M', timestamp) as time_label
         FROM service_checks
+        WHERE timestamp >= ?
         ORDER BY timestamp DESC
         LIMIT ?
-    """, (limit_per_bank,))
+    """, (cutoff, limit_per_bank))
     time_rows = list(reversed(cursor.fetchall()))
     labels = [r["time_label"] for r in time_rows]
     
@@ -408,9 +410,9 @@ def get_latency_chart_data(limit_per_bank: int = 60) -> Dict[str, Any]:
             strftime('%H:%M', timestamp) as time_label,
             ROUND(AVG(latency_ms), 1) as avg_lat
         FROM service_checks
-        WHERE strftime('%H:%M', timestamp) IN ({placeholders})
+        WHERE timestamp >= ? AND strftime('%H:%M', timestamp) IN ({placeholders})
         GROUP BY bank_id, time_label
-    """, labels)
+    """, [cutoff] + labels)
     
     data_map = {(r["bank_id"], r["time_label"]): r["avg_lat"] for r in cursor.fetchall()}
     

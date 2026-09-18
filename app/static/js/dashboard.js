@@ -93,12 +93,151 @@ function updateChartTheme() {
     latencyChart.update();
 }
 
-// Resetar Pan e Zoom do Gráfico
+// Controle de Paginação e Arrastar no Histórico do Gráfico
+const DEFAULT_VISIBLE_POINTS = 20;
+let userHasInteractedWithChart = false;
+
+// Resetar Pan e Zoom do Gráfico para os dados mais recentes
 function resetChartZoom() {
-    if (latencyChart && typeof latencyChart.resetZoom === "function") {
+    if (!latencyChart) return;
+    if (typeof latencyChart.resetZoom === "function") {
         latencyChart.resetZoom();
-        showToast("Zoom do gráfico redefinido", "info");
     }
+    userHasInteractedWithChart = false;
+    const total = latencyChart.data.labels ? latencyChart.data.labels.length : 0;
+    if (total > DEFAULT_VISIBLE_POINTS) {
+        latencyChart.options.scales.x.min = total - DEFAULT_VISIBLE_POINTS;
+        latencyChart.options.scales.x.max = total - 1;
+    } else {
+        latencyChart.options.scales.x.min = 0;
+        latencyChart.options.scales.x.max = Math.max(0, total - 1);
+    }
+    latencyChart.update();
+    showToast("Visão do gráfico redefinida para os pontos mais recentes", "info");
+}
+
+// Navegação por botões de passo (Anterior / Recente)
+function panChartStep(direction) {
+    if (!latencyChart || !latencyChart.scales.x) return;
+    const total = latencyChart.data.labels ? latencyChart.data.labels.length : 0;
+    if (total <= 1) return;
+
+    const scale = latencyChart.scales.x;
+    const currentMin = typeof scale.min === "number" ? scale.min : 0;
+    const currentMax = typeof scale.max === "number" ? scale.max : total - 1;
+    const windowSize = Math.max(1, currentMax - currentMin);
+    const step = Math.max(1, Math.round(windowSize / 3));
+
+    userHasInteractedWithChart = true;
+
+    if (direction === "left") {
+        // Ir para o passado (mais antigo)
+        const newMin = Math.max(0, currentMin - step);
+        const newMax = Math.min(total - 1, newMin + windowSize);
+        latencyChart.options.scales.x.min = newMin;
+        latencyChart.options.scales.x.max = newMax;
+    } else {
+        // Ir para o presente (mais recente)
+        const newMax = Math.min(total - 1, currentMax + step);
+        const newMin = Math.max(0, newMax - windowSize);
+        latencyChart.options.scales.x.min = newMin;
+        latencyChart.options.scales.x.max = newMax;
+        if (newMax >= total - 1) {
+            userHasInteractedWithChart = false;
+        }
+    }
+
+    latencyChart.update('none');
+}
+
+// Arrastar interativo via Mouse / Touch / Pointer no Canvas
+function setupChartDragNavigation(canvas) {
+    let isDragging = false;
+    let startX = 0;
+    let initialMin = 0;
+    let initialMax = 0;
+    let hasMoved = false;
+
+    canvas.addEventListener("pointerdown", (e) => {
+        if (!latencyChart || !latencyChart.scales.x) return;
+        if (e.button !== 0 && e.pointerType === "mouse") return;
+        
+        const total = latencyChart.data.labels ? latencyChart.data.labels.length : 0;
+        if (total <= 1) return;
+
+        const scale = latencyChart.scales.x;
+        isDragging = true;
+        hasMoved = false;
+        startX = e.clientX;
+        
+        initialMin = typeof scale.min === "number" ? scale.min : 0;
+        initialMax = typeof scale.max === "number" ? scale.max : total - 1;
+
+        canvas.classList.add("grabbing");
+        try {
+            canvas.setPointerCapture(e.pointerId);
+        } catch (_) {}
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+        if (!isDragging || !latencyChart || !latencyChart.scales.x) return;
+
+        const deltaX = e.clientX - startX;
+        if (Math.abs(deltaX) > 3) {
+            hasMoved = true;
+            userHasInteractedWithChart = true;
+        }
+        if (!hasMoved) return;
+
+        const total = latencyChart.data.labels.length;
+        const windowSize = Math.max(1, initialMax - initialMin);
+        
+        if (windowSize >= total - 1 && initialMin === 0 && initialMax === total - 1) {
+            return;
+        }
+
+        const scaleWidth = latencyChart.scales.x.width || canvas.clientWidth || 600;
+        const pixelsPerIndex = Math.max(1, scaleWidth / windowSize);
+        
+        // Puxar para a direita (deltaX > 0) revela dados anteriores (diminui índices)
+        // Puxar para a esquerda (deltaX < 0) revela dados recentes (aumenta índices)
+        const indexShift = Math.round(deltaX / pixelsPerIndex);
+        
+        let newMin = initialMin - indexShift;
+        let newMax = initialMax - indexShift;
+
+        if (newMin < 0) {
+            newMin = 0;
+            newMax = Math.min(total - 1, newMin + windowSize);
+        } else if (newMax > total - 1) {
+            newMax = total - 1;
+            newMin = Math.max(0, newMax - windowSize);
+        }
+
+        latencyChart.options.scales.x.min = newMin;
+        latencyChart.options.scales.x.max = newMax;
+        latencyChart.update('none');
+    });
+
+    const endDrag = (e) => {
+        if (isDragging) {
+            isDragging = false;
+            canvas.classList.remove("grabbing");
+            try {
+                canvas.releasePointerCapture(e.pointerId);
+            } catch (_) {}
+            
+            if (latencyChart && latencyChart.scales.x) {
+                const total = latencyChart.data.labels ? latencyChart.data.labels.length : 0;
+                if (latencyChart.scales.x.max >= total - 1) {
+                    userHasInteractedWithChart = false;
+                }
+            }
+        }
+    };
+
+    canvas.addEventListener("pointerup", endDrag);
+    canvas.addEventListener("pointercancel", endDrag);
 }
 
 // Inicialização do Gráfico Chart.js
@@ -125,26 +264,27 @@ function initChart() {
             },
             plugins: {
                 legend: {
-                    display: false // Usamos os botões interativos customizados acima do gráfico
+                    display: false
                 },
                 zoom: {
                     pan: {
-                        enabled: true,
-                        mode: 'x',
-                        modifierKey: null,
+                        enabled: false // Arraste interativo implementado nativamente via setupChartDragNavigation
                     },
                     zoom: {
                         wheel: {
                             enabled: true,
-                            speed: 0.1,
+                            speed: 0.05,
                         },
                         pinch: {
                             enabled: true,
                         },
                         mode: 'x',
+                        onZoomComplete: () => {
+                            userHasInteractedWithChart = true;
+                        }
                     },
                     limits: {
-                        x: { min: 'original', max: 'original' }
+                        x: { min: 0, max: 'original', minRange: 4 }
                     }
                 },
                 tooltip: {
@@ -180,10 +320,11 @@ function initChart() {
         }
     });
 
+    setupChartDragNavigation(ctx);
     loadChartData();
 }
 
-// Carregar Dados do Gráfico com Cores Oficiais
+// Carregar Dados do Gráfico com Cores Oficiais e Ajuste de Janela de Histórico
 async function loadChartData() {
     if (!latencyChart) return;
     try {
@@ -209,7 +350,30 @@ async function loadChartData() {
                 hidden: (currentChartFilter !== "all" && ds.bank_id !== currentChartFilter)
             };
         });
-        latencyChart.update();
+
+        const total = data.labels.length;
+        if (total > 0) {
+            // Se o usuário não está navegando no passado, foca nos últimos 20 pontos
+            if (!userHasInteractedWithChart) {
+                if (total > DEFAULT_VISIBLE_POINTS) {
+                    latencyChart.options.scales.x.min = total - DEFAULT_VISIBLE_POINTS;
+                    latencyChart.options.scales.x.max = total - 1;
+                } else {
+                    latencyChart.options.scales.x.min = 0;
+                    latencyChart.options.scales.x.max = total - 1;
+                }
+            }
+            // Atualiza limites de zoom para cobrir todo o histórico
+            if (latencyChart.options.plugins && latencyChart.options.plugins.zoom && latencyChart.options.plugins.zoom.limits) {
+                latencyChart.options.plugins.zoom.limits.x = {
+                    min: 0,
+                    max: total - 1,
+                    minRange: 4
+                };
+            }
+        }
+
+        latencyChart.update(userHasInteractedWithChart ? 'none' : undefined);
     } catch (err) {
         console.error("Erro ao carregar dados do gráfico:", err);
     }

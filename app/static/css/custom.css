@@ -426,7 +426,11 @@ html.light ::-webkit-scrollbar-thumb:hover {
 #latencyChart {
     cursor: grab;
     touch-action: pan-y;
+    user-select: none;
+    -webkit-user-select: none;
 }
+#latencyChart.grabbing,
 #latencyChart:active {
     cursor: grabbing;
 }
+

@@ -189,7 +189,7 @@ async def api_simulate_bank(bank_id: str, payload: dict):
 @app.get("/api/chart-data")
 async def api_chart_data():
     """Retorna séries temporais de latência dos bancos para o Chart.js."""
-    return get_latency_chart_data(limit_per_bank=60)
+    return get_latency_chart_data(limit_per_bank=100)
 
 @app.post("/api/check-now")
 async def api_check_now(payload: PingRequest = None):
