@@ -73,16 +73,16 @@ def init_db():
     
     conn.commit()
     
-    # Se o banco tiver menos de 1000 checagens (histórico incompleto), repovoar com histórico de 24h
+    # Se o banco tiver poucas checagens, repovoar com demonstração visual rica de calor
     cursor.execute("SELECT COUNT(*) as count FROM service_checks")
     row = cursor.fetchone()
-    if row["count"] < 1000:
+    if row["count"] < 50:
         seed_initial_history(conn)
         
     conn.close()
 
 def seed_initial_history(conn: sqlite3.Connection):
-    """Alimenta o histórico com 24 horas de dados realistas (288 blocos de 5min) para os 5 bancos."""
+    """Alimenta o histórico com dados realistas incluindo verde (bom estado), amarelo (oscilação) e vermelho (queda)."""
     cursor = conn.cursor()
     now = get_brasilia_now()
     
@@ -94,9 +94,8 @@ def seed_initial_history(conn: sqlite3.Connection):
         "bradesco": (90, 230)
     }
     
-    rows = []
-    # 288 pontos de 5 minutos = 24 horas completas
-    for i in range(288, -1, -1):
+    # Criar 30 pontos recentes por banco para a barra de calor
+    for i in range(30, -1, -1):
         check_time = (now - timedelta(minutes=i * 5)).strftime("%Y-%m-%d %H:%M:%S")
         
         for bank in BANKS_CATALOG:
@@ -106,33 +105,33 @@ def seed_initial_history(conn: sqlite3.Connection):
             for svc in bank["services"]:
                 s_id = svc["id"]
                 
-                # Simular padrão de oscilação realista ao longo do dia:
-                # 1. Pico vespertino de compensação (i entre 70 e 72)
-                # 2. Pico matutino de abertura (i entre 165 e 167)
-                # 3. Breve incidente pontual (i entre 25 e 26 para Sicoob e BB)
-                if (b_id in ["itau", "sicredi"] and i in [70, 71]) or (b_id == "bradesco" and i in [165, 166]):
-                    latency = random.uniform(850, 1550)
+                # Simular padrão de calor variado para visualização imediata:
+                # Na posição i=8 ou 9, simular oscilação (amarelo) em alguns bancos
+                # Na posição i=18 ou 19, simular queda breve (vermelho)
+                if (b_id in ["itau", "sicredi"] and i in [6, 7]) or (b_id == "bradesco" and i in [2, 3]):
+                    # Amarelo: Oscilando
+                    latency = random.uniform(850, 1600)
                     status = "degraded"
                     code = 200
-                    err = "Tempo de resposta acima do SLA (Oscilação)"
-                elif (b_id == "sicoob" and i in [25, 26]) or (b_id == "bb" and i in [140, 141]):
+                    err = "Tempo de resposta acima do SLA"
+                elif (b_id == "sicoob" and i in [14, 15]) or (b_id == "bb" and i == 20):
+                    # Vermelho: Caiu
                     latency = 2800.0
                     status = "outage"
                     code = 503
                     err = "503 Service Unavailable (Falha de Conexão)"
                 else:
+                    # Verde: Bom estado
                     latency = random.uniform(min_l, max_l)
                     status = "operational"
                     code = 200
                     err = None
                     
-                rows.append((b_id, s_id, check_time, code, round(latency, 1), status, err, 1))
-
-    cursor.executemany("""
-        INSERT INTO service_checks 
-        (bank_id, service_id, timestamp, status_code, latency_ms, status, error_message, is_simulated)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    """, rows)
+                cursor.execute("""
+                    INSERT INTO service_checks 
+                    (bank_id, service_id, timestamp, status_code, latency_ms, status, error_message, is_simulated)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 1)
+                """, (b_id, s_id, check_time, code, round(latency, 1), status, err))
     
     cursor.execute("""
         INSERT INTO incidents (bank_id, service_id, title, description, severity, status, started_at, resolved_at)
@@ -142,8 +141,8 @@ def seed_initial_history(conn: sqlite3.Connection):
     """, (
         (now - timedelta(hours=2)).strftime("%Y-%m-%d %H:%M:%S"),
         (now - timedelta(hours=1, minutes=50)).strftime("%Y-%m-%d %H:%M:%S"),
-        (now - timedelta(hours=6)).strftime("%Y-%m-%d %H:%M:%S"),
-        (now - timedelta(hours=5, minutes=45)).strftime("%Y-%m-%d %H:%M:%S")
+        (now - timedelta(hours=4)).strftime("%Y-%m-%d %H:%M:%S"),
+        (now - timedelta(hours=3, minutes=45)).strftime("%Y-%m-%d %H:%M:%S")
     ))
     
     conn.commit()
@@ -383,77 +382,54 @@ def get_system_summary() -> Dict[str, Any]:
         "last_checked_at": get_brasilia_now().strftime("%H:%M:%S")
     }
 
-def get_latency_chart_data(period: str = "24h") -> Dict[str, Any]:
-    """Retorna séries temporais de latência dos bancos por período (1h, 6h, 24h) com agrupamento inteligente."""
+def get_latency_chart_data(limit_per_bank: int = 100) -> Dict[str, Any]:
     conn = get_db_connection()
     cursor = conn.cursor()
-    now = get_brasilia_now()
-
-    if period == "1h":
-        cutoff = (now - timedelta(hours=1)).strftime("%Y-%m-%d %H:%M:%S")
-        bucket_expr = "strftime('%Y-%m-%d %H:%M', timestamp)"
-        label_expr = "strftime('%H:%M', timestamp)"
-        limit = 60
-    elif period == "6h":
-        cutoff = (now - timedelta(hours=6)).strftime("%Y-%m-%d %H:%M:%S")
-        bucket_expr = "strftime('%Y-%m-%d %H:', timestamp) || printf('%02d', (CAST(strftime('%M', timestamp) AS INTEGER) / 2) * 2)"
-        label_expr = "strftime('%H:', timestamp) || printf('%02d', (CAST(strftime('%M', timestamp) AS INTEGER) / 2) * 2)"
-        limit = 180
-    else: # 24h
-        cutoff = (now - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
-        bucket_expr = "strftime('%Y-%m-%d %H:', timestamp) || printf('%02d', (CAST(strftime('%M', timestamp) AS INTEGER) / 5) * 5)"
-        label_expr = "strftime('%H:', timestamp) || printf('%02d', (CAST(strftime('%M', timestamp) AS INTEGER) / 5) * 5)"
-        limit = 288
-
-    cursor.execute(f"""
-        SELECT 
-            {bucket_expr} as bucket_key,
-            {label_expr} as time_label,
-            MAX(timestamp) as max_ts
+    
+    datasets = []
+    cutoff = (get_brasilia_now() - timedelta(hours=24)).strftime("%Y-%m-%d %H:%M:%S")
+    
+    cursor.execute("""
+        SELECT DISTINCT strftime('%H:%M', timestamp) as time_label
         FROM service_checks
         WHERE timestamp >= ?
-        GROUP BY bucket_key
-        ORDER BY max_ts DESC
+        ORDER BY timestamp DESC
         LIMIT ?
-    """, (cutoff, limit))
+    """, (cutoff, limit_per_bank))
+    time_rows = list(reversed(cursor.fetchall()))
+    labels = [r["time_label"] for r in time_rows]
     
-    rows = list(reversed(cursor.fetchall()))
-    if not rows:
+    if not labels:
         conn.close()
-        return {"labels": [], "datasets": [], "period": period}
+        return {"labels": [], "datasets": []}
 
-    bucket_keys = [r["bucket_key"] for r in rows]
-    labels = [r["time_label"] for r in rows]
-
-    placeholders = ",".join(["?"] * len(bucket_keys))
+    placeholders = ",".join(["?"] * len(labels))
     cursor.execute(f"""
         SELECT 
             bank_id,
-            {bucket_expr} as bucket_key,
+            strftime('%H:%M', timestamp) as time_label,
             ROUND(AVG(latency_ms), 1) as avg_lat
         FROM service_checks
-        WHERE timestamp >= ? AND {bucket_expr} IN ({placeholders})
-        GROUP BY bank_id, bucket_key
-    """, [cutoff] + bucket_keys)
-
-    data_map = {(r["bank_id"], r["bucket_key"]): r["avg_lat"] for r in cursor.fetchall()}
-
-    datasets = []
+        WHERE timestamp >= ? AND strftime('%H:%M', timestamp) IN ({placeholders})
+        GROUP BY bank_id, time_label
+    """, [cutoff] + labels)
+    
+    data_map = {(r["bank_id"], r["time_label"]): r["avg_lat"] for r in cursor.fetchall()}
+    
     for bank in BANKS_CATALOG:
         b_id = bank["id"]
-        points = [data_map.get((b_id, k)) for k in bucket_keys]
+        points = [data_map.get((b_id, t)) for t in labels]
         datasets.append({
             "bank_id": b_id,
             "label": bank["short_name"],
             "color": bank["color"],
             "data": points
         })
-
+        
     conn.close()
     return {
         "labels": labels,
-        "datasets": datasets,
-        "period": period
+        "datasets": datasets
     }
 
 def get_incidents(status_filter: Optional[str] = None, limit: int = 50) -> List[Dict[str, Any]]:

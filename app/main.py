@@ -187,11 +187,9 @@ async def api_simulate_bank(bank_id: str, payload: dict):
     return {"message": f"Estado de {bank_id} alterado para {state}", "bank_id": bank_id, "state": state}
 
 @app.get("/api/chart-data")
-async def api_chart_data(period: str = "24h"):
-    """Retorna séries temporais de latência dos bancos para o Chart.js por período (1h, 6h, 24h)."""
-    if period not in ["1h", "6h", "24h"]:
-        period = "24h"
-    return get_latency_chart_data(period=period)
+async def api_chart_data():
+    """Retorna séries temporais de latência dos bancos para o Chart.js."""
+    return get_latency_chart_data(limit_per_bank=100)
 
 @app.post("/api/check-now")
 async def api_check_now(payload: PingRequest = None):
