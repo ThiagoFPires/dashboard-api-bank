@@ -15,8 +15,15 @@
             <p class="text-xs text-zinc-400 mt-1">Registro de anomalias, picos de latência e manutenções nos serviços bancários.</p>
         </div>
 
-        <div class="flex items-center gap-2 font-mono text-xs text-zinc-400">
-            <span>Total: <strong class="text-white">{{ incidents | length }}</strong></span>
+        <div class="flex items-center gap-3 flex-wrap">
+            <div class="flex items-center bg-zinc-950 p-1 rounded-lg border border-zinc-800 text-xs font-medium">
+                <a href="/incidents" class="px-3 py-1 rounded transition-colors {% if status_filter == 'all' %}bg-white text-black font-bold{% else %}text-zinc-400 hover:text-white{% endif %}">Todos</a>
+                <a href="/incidents?status=active" class="px-3 py-1 rounded transition-colors {% if status_filter == 'active' %}bg-white text-black font-bold{% else %}text-zinc-400 hover:text-white{% endif %}">Ativos</a>
+                <a href="/incidents?status=resolved" class="px-3 py-1 rounded transition-colors {% if status_filter == 'resolved' %}bg-white text-black font-bold{% else %}text-zinc-400 hover:text-white{% endif %}">Resolvidos</a>
+            </div>
+            <div class="font-mono text-xs text-zinc-400">
+                <span>Exibindo: <strong class="text-white">{{ incidents | length }}</strong></span>
+            </div>
         </div>
     </div>
 
